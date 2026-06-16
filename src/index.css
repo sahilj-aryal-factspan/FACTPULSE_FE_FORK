@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+@theme {
+  /* Custom responsive screen breakpoints as requested */
+  --breakpoint-xs: 250px;       /* Custom tiny mobile viewport */
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  --breakpoint-3xl: 1920px;     /* Wide desktops */
+  --breakpoint-4k: 2560px;     /* QHD & UltraWide screens */
+  --breakpoint-4k-tv: 3840px;  /* 4K TV Screen Resolution */
+
+  /* Factspan Brand Palette */
+  --color-brand-navy: #0d2a66;
+  --color-brand-navy-dark: #071638;
+  --color-brand-orange: #f68b1f;
+  --color-brand-purple: #8a3d78;
+  
+  /* Neutral Palette overrides */
+  --color-neutral-light: #f5f6f8;
+  --color-neutral-border: #e4e7ec;
+}
+
+/* Base resets and custom fonts mapping */
+@layer base {
+  body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: #f5f6f8;
+    color: #374151;
+  }
+  
+  body.dark {
+    background-color: #0b0f19;
+    color: #f3f4f6;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+}
