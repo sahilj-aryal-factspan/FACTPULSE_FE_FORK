@@ -16,14 +16,15 @@ The UI/UX is built to serve as an **Executive Delivery Command Center**. It aims
 ## 2. Visual Tokens & Theme (Tailwind CSS v4 Configuration)
 
 ### 2.1 Theme Color Mappings
-Tailwind utilities map to these standard Factspan palette tokens inside `src/index.css`:
-*   **Navy Brand (`bg-brand-navy`, `text-brand-navy`):** `#0d2a66` (Primary dashboard backgrounds, sidebar, headers)
-*   **Orange Accent (`bg-brand-orange`, `text-brand-orange`):** `#f68b1f` (Highlight tags, progress bars, gauges)
-*   **Purple Accent (`bg-brand-purple`, `text-brand-purple`):** `#8a3d78` (Callouts, warnings, warnings cards)
-*   **RAG System Colors:**
-    *   Green: `text-emerald-500` / `bg-emerald-500` (Compliance met)
-    *   Amber: `text-amber-500` / `bg-amber-500` (Milestone pending)
-    *   Red: `text-red-500` / `bg-red-500` (Overdue activity)
+Tailwind utilities map to these standard Fact+Pulse palette tokens inside `src/index.css`:
+*   **Primary Navy (`bg-primary`, `text-primary`, or `bg-brand-navy`):** `#1E3A8A` (Primary brand color, headers, primary buttons)
+*   **Secondary Blue (`bg-secondary`, `text-secondary`):** `#2563EB` (Action elements, secondary buttons, interactive highlights)
+*   **Success Green (`bg-success`, `text-success`):** `#059669` (Completed checklists, "On Track" status pills)
+*   **Warning Orange (`bg-warning`, `text-warning`, or `bg-brand-orange`):** `#D97706` (Milestones pending, "At Risk" status pills)
+*   **Danger Red (`bg-danger`, `text-danger`):** `#DC2626` (Overdue activities, "Off Track" status pills)
+*   **Neutral Dark (`bg-neutral`, `text-neutral`):** `#111827` (Dark mode background resets, primary dark text)
+*   **Neutral Light (`bg-neutral-light`):** `#F3F4F6` (Light mode background resets)
+*   **Neutral Border (`border-neutral-border`):** `#D1D5DB` (Table gridlines, card borders)
 
 ### 2.2 Typography
 *   **Heading Font (`font-sans` with Outfit heading):** `Outfit` (sans-serif) for executive titles, dashboard scores, and card headers.
@@ -88,7 +89,7 @@ All components *must* implement class-based dark mode styling:
 
 ### 4.4 WF-04: Project Governance Dashboard
 *   **Activity Compliance Matrix (Grid):**
-    *   Cards representing the 11 key governance checkpoints (Weekly Notes, WBR, MBR, Employee 1x1s, etc.).
+    *   Cards representing the 10 key governance checkpoints (Weekly Notes, WBR, MBR, Employee 1x1s, etc.).
     *   Cards show status: **Completed** (Green check), **Overdue** (Red warning), or **Pending** (Amber dot) with dates.
 *   **Document Upload Widget:**
     *   Drag-and-drop zone supporting PDF and PPT uploads.

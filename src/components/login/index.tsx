@@ -8,7 +8,9 @@ export default function LoginComponent() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
   const login = useAuthStore((state) => state.login);
+  const loginWithGoogle = useAuthStore((state) => state.loginWithGoogle);
   const navigate = useNavigate();
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -17,13 +19,21 @@ export default function LoginComponent() {
       setError('Email is required');
       return;
     }
+    if (!password) {
+      setError('Password is required');
+      return;
+    }
     setError('');
     setLoading(true);
     try {
-      await login(email, 'ACCOUNT_LEAD');
+      await login(email, password);
       navigate('/portfolio');
-    } catch {
-      setError('Login failed. Please try again.');
+    } catch (err: any) {
+      console.error(err);
+      const msg =
+        err.response?.data?.message ||
+        'Login failed. Please verify credentials or check BE connection.';
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -33,10 +43,13 @@ export default function LoginComponent() {
     setLoading(true);
     setError('');
     try {
-      await login('executive.lead@factspan.com', 'EXECUTIVE_LEADERSHIP');
+      // Passes typed email for SSO simulation, defaults to seeded admin on backend if empty
+      await loginWithGoogle(email || undefined);
       navigate('/portfolio');
-    } catch {
-      setError('Google Workspace sign in failed.');
+    } catch (err: any) {
+      console.error(err);
+      const msg = err.response?.data?.message || 'Google Sign In simulation failed.';
+      setError(msg);
     } finally {
       setLoading(false);
     }

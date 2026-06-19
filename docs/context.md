@@ -82,14 +82,14 @@ graph TD
     Account[Account: Macy's, CVS, etc.] --> BC[Buying Center: CVS Digital, CVS Pharmacy]
     Account --> Project[Project: e.g. Customer Portal]
     BC --> Stakeholder[Stakeholders: Sentiment & reporting line tree]
-    Project --> Checkpoints[11-Checkpoint Governance Activities]
+    Project --> Checkpoints[10-Checkpoint Governance Activities]
     Project --> Risks[Risks & Action Items Registry]
 ```
 
 1. **Account:** The topmost enterprise entity. Tracks global scores for Governance, Compliance, and RAG status (Green, Amber, Red).
 2. **Buying Center:** Segments within an Account. Tracks relationships, meeting frequencies, and stakeholder sentiment.
 3. **Stakeholder Hierarchy:** Multi-level tree of client contacts. Tracks report mappings, contact history, and relationship sentiment (Positive/Green, Neutral/Yellow, Negative/Red).
-4. **Governance Activities (11 Core Checkpoints):**
+4. **Governance Activities (10 Core Checkpoints):**
    - Daily Standups, Weekly Notes, WBR, FBR, MBR, QBR, Stakeholder 1x1, Security Reviews, NPS Feedback, Employee 1x1.
 5. **AI Workspace:** Uploads source documents (.pdf, .pptx, .docx) to sync with Google Drive, processes updates, and triggers AI drafts (Weekly Notes, WBRs, Digests) requiring human approval before publication.
 
@@ -106,7 +106,7 @@ All page routes are defined inside [src/routes/index.tsx](file:///Users/sahiljar
 | `/portfolio`                               | `PortfolioPage`     | Protected    | Global accounts grid, average governance scores, alerts.                         |
 | `/accounts/:accountId`                     | `AccountsPage`      | Protected    | List of projects under the account, buying centers, Google Drive sync settings.  |
 | `/buying-centers/:centerId`                | `BuyingCentersPage` | Protected    | Interactive reporting hierarchy chart and connection timeline logs.              |
-| `/accounts/:accountId/projects/:projectId` | `ProjectsPage`      | Protected    | 11-Checkpoints matrix grid, side-by-side Risks and Actions items board.          |
+| `/accounts/:accountId/projects/:projectId` | `ProjectsPage`      | Protected    | 10-Checkpoints matrix grid, side-by-side Risks and Actions items board.          |
 | `/ai-workspace`                            | `AIWorkspacePage`   | Protected    | File drag-and-drop panel, markdown draft preview and editor, publishing options. |
 
 _Access guards are handled via `<ProtectedRoute>` (requires authentication) and `<PublicOnlyRoute>` (redirects active sessions to `/portfolio`)._

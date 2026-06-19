@@ -4,73 +4,63 @@
 ---
 
 ## 1. Overview
-Fact+Pulse is built as a responsive, dashboard-first web application. The frontend uses **Next.js (App Router)** as the foundation, leveraging React, Tailwind CSS, and shadcn/ui to provide an executive-level command center interface.
+Fact+Pulse is built as a responsive, dashboard-first web application. The frontend uses **Vite + React** as the foundation, leveraging React Router DOM for SPA routing, Tailwind CSS, and shadcn/ui to provide an executive-level command center interface.
 
 ### Technical Stack
-*   **Framework:** Next.js (Version 14+, App Router) or Vite React TypeScript
+*   **Framework:** React 19 + Vite 8
+*   **Routing:** React Router DOM v7 (SPA routing with route guards)
 *   **Language:** TypeScript (Strict Mode)
 *   **Styling:** Tailwind CSS v4 (configured via CSS variables, using utility classes for dark mode and responsive layouts)
 *   **Component Library:** shadcn/ui (Radix UI primitives under the hood)
 *   **Data Fetching & Cache:** TanStack Query (React Query)
-*   **Global Client State:** Zustand (for theme selection and layout switches)
+*   **Global Client State:** Zustand (for auth, theme selection, and layout switches)
 *   **Forms & Validation:** React Hook Form & Zod
 *   **Date Formatting:** date-fns
 
 ---
 
 ## 2. Directory Structure
-The frontend project follows a highly organized, modular Next.js directory layout inside the `src/` folder:
+The frontend project follows a highly organized, modular React + Vite directory layout inside the `src/` folder:
 
 ```
 src/
-├── app/                      # Next.js App Router folders
-│   ├── layout.tsx            # Global HTML layout (providers, font, theme)
-│   ├── page.tsx              # Root redirect (to /portfolio)
-│   ├── portfolio/            # Portfolio Dashboard Route
-│   │   └── page.tsx
-│   ├── accounts/             # Account pages
-│   │   └── [accountId]/
-│   │       ├── page.tsx      # Account Dashboard
-│   │       └── projects/     # Project routes within an account
-│   │           └── [projectId]/
-│   │               └── page.tsx
-│   ├── buying-centers/       # Buying Centers pages
-│   │   └── [centerId]/
-│   │       └── page.tsx      # Buying Center Dashboard
-│   ├── ai-workspace/         # AI Governance workspace
-│   │   └── page.tsx
-│   └── error.tsx             # Global error boundaries
-│
-├── components/               # Component Architecture
-│   ├── ui/                   # shadcn/ui components (buttons, dialogs, cards)
-│   ├── layouts/              # Core page wrappers (Sidebar, TopHeader, Container)
-│   ├── dashboard/            # Dashboard widgets and summaries
-│   ├── charts/               # Recharts wrappers (Line, Bar, Radar charts)
-│   ├── forms/                # Zod validated form structures
-│   └── ai/                   # AI Editor, workspace utilities
-│
-├── hooks/                    # Reusable React Hooks (API queries, UI state)
+├── assets/                # App-specific assets (global styling, etc.)
+├── components/            # Reusable UI component blocks
+│   ├── ui/                # UI primitives (buttons, modals, dialogs)
+│   ├── layouts/           # Common wrappers (Sidebar, TopHeader, Container)
+│   ├── dashboard/         # Widgets and summaries
+│   ├── charts/            # Recharts data visualizers
+│   ├── forms/             # Input forms with validation
+│   └── ai/                # AI markdown editors & checkers
+├── hooks/                 # React Query custom hooks (API communication)
 │   ├── use-accounts.ts
 │   ├── use-governance.ts
 │   ├── use-ai-workspace.ts
 │   └── use-stakeholders.ts
-│
-├── services/                 # API Clients & Service Integrations
-│   ├── api-client.ts         # Axios client with interceptors
-│   ├── mcp-client.ts         # Model Context Protocol integration layer
-│   └── local-mock.ts         # Mock server hooks (development / demo)
-│
-├── store/                    # Zustand Store definitions
-│   ├── ui-store.ts           # Sidebar state, theme, modal triggers
-│   └── draft-store.ts        # AI draft editor temporary workspace state
-│
-├── lib/                      # Base libraries and configurations
-│   ├── utils.ts              # cn helper, tailwind-merge configuration
-│   └── theme.ts              # CSS variables injection helpers
-│
-└── types/                    # Common TypeScript definitions
-    ├── api.d.ts              # API interfaces (Request / Response)
-    └── index.d.ts            # Common entities (Account, Project, Stakeholder)
+├── pages/                 # Routing pages
+│   ├── landing/           # Landing page
+│   ├── login/             # Login page
+│   ├── portfolio/         # Portfolio page
+│   ├── accounts/          # Account page
+│   ├── buying-centers/    # Buying Center page
+│   └── projects/          # Project page
+├── routes/                # Router configuration & route guards
+│   └── index.tsx          # React Router DOM layout and route paths
+├── services/              # Base services
+│   ├── api-client.ts      # Axios client with interceptors
+│   ├── mcp-client.ts      # Model Context Protocol integration layer
+│   └── local-mock.ts      # Mock server hooks (development / demo)
+├── store/                 # Zustand global client states
+│   ├── auth-store.ts      # User sessions & roles
+│   ├── ui-store.ts        # Sidebar state, theme, modal triggers
+│   └── draft-store.ts     # AI draft editor temporary workspace state
+├── types/                 # Unified TypeScript interfaces
+│   ├── api.d.ts           # API interfaces (Request / Response)
+│   └── index.d.ts         # Common entities (Account, Project, Stakeholder)
+├── App.tsx                # Base application element
+├── App.css                # App-specific layout overrides
+├── index.css              # Global styles, variables, Tailwind directives
+└── main.tsx               # Client entry point
 ```
 
 ---
@@ -80,10 +70,12 @@ Routing maps directly to the navigation requirements of the Executive Command Ce
 
 | Route Path | Dashboard View | Primary Persona | Core Functionality |
 | :--- | :--- | :--- | :--- |
+| `/` | Landing Page | Public | Welcome screen & general introduction. |
+| `/login` | Login Page | Public | Google Workspace SSO simulation. |
 | `/portfolio` | Portfolio Dashboard | Executive, Account Lead | High-level account cards, portfolio RAG health tracker, compliance trends. |
-| `/accounts/[accountId]` | Account Dashboard | Account Lead | Buying centers, overall project RAG states, stakeholder sentiment scores, and automated reports. |
-| `/buying-centers/[centerId]` | Buying Center Dashboard | Account Lead | Stakeholder hierarchy charts, connect frequency tracker, and contact cards. |
-| `/accounts/[accountId]/projects/[projectId]` | Project Dashboard | Delivery Lead | Detailed project governance activities, risks lists, action items, and upload widget. |
+| `/accounts/:accountId` | Account Dashboard | Account Lead | Buying centers, overall project RAG states, stakeholder sentiment scores, and automated reports. |
+| `/buying-centers/:centerId` | Buying Center Dashboard | Account Lead | Stakeholder hierarchy charts, connect frequency tracker, and contact cards. |
+| `/accounts/:accountId/projects/:projectId` | Project Dashboard | Delivery Lead | Detailed project governance activities, risks lists, action items, and upload widget. |
 | `/ai-workspace` | AI Governance Workspace | Delivery Lead, Account Lead | Upload artifacts, select draft types (Weekly Notes, WBR, digest), review drafts, approve, and export. |
 
 ---
@@ -128,7 +120,7 @@ To support Factspan's future vision of MCP integration, the frontend embeds a de
 ---
 
 ## 6. Rendering and Layout Architecture
-*   **Root Layout & Theme Wrapper:** Sets up HTML headers, embeds font stylesheets, configures the Tailwind theme provider, and subscribes to the Zustand global `useUIStore` to apply class-based theme injection (`.dark` on `<html>` and `<body>`).
+*   **Root Layout & Theme Wrapper:** Configured in [main.tsx](file:///Users/sahiljaryal/Documents/FACTSPAN/FACTPULSE_FE/src/main.tsx) and [App.tsx](file:///Users/sahiljaryal/Documents/FACTSPAN/FACTPULSE_FE/src/App.tsx). Subscribes to the Zustand global `useUIStore` to apply class-based theme injection (`.dark` on `<html>` and `<body>`) and manages the theme provider.
 *   **App Layout Wrapper:** Every dashboard page is wrapped in an administrative dashboard frame including a Collapsible Left Sidebar, Page-specific Top Breadcrumbs Header, and the Content Scroll Pane.
 *   **Extreme Responsive System (250px - 4K TV):**
     *   `4k-tv` (>= 3840px): Ultra-scale layout. Margins, text sizes, cards, and container maximum widths scale up (e.g. `4k-tv:max-w-[800px]`, `4k-tv:text-6xl`) to avoid floating layouts and tiny text on massive TV boards.

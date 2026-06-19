@@ -7,10 +7,10 @@
 Establish the base repository infrastructure, build tools, design values, and directory framework.
 
 *   `[ ]` **Task 101: Project Initialization**
-    *   Initialize Next.js using `npx create-next-app@latest` with TypeScript, ESLint, Tailwind CSS, and `src/` directory layout.
+    *   Initialize Vite + React SPA with TypeScript, ESLint, Tailwind CSS, and modular `src/` directory layout.
 *   `[ ]` **Task 102: Iconography & Design System setup**
-    *   Install `lucide-react` and initialize shadcn/ui library (`npx shadcn-ui@latest init`).
-    *   Configure `tailwind.config.js` and `src/app/globals.css` with the Factspan Navy, Orange, Purple, and RAG status colors.
+    *   Install `lucide-react` and initialize shadcn/ui library.
+    *   Configure Tailwind CSS variables in `src/index.css` with the Factspan Navy, Orange, Purple, and RAG status colors.
 *   `[ ]` **Task 103: Base Layout Shell**
     *   Create Global Context Providers wrapper (Theme, React Query Client, Toast alerts).
     *   Implement left sidebar layout (collapsible responsive drawer for mobile/tablet).
@@ -40,15 +40,15 @@ Implement the core visual interfaces of the governance system.
     *   Implement high-level portfolio metrics widgets.
     *   Assemble Account grid cards mapping RAG statuses and scores.
 *   `[ ]` **Task 302: Account Dashboard (WF-02)**
-    *   Create `/accounts/[accountId]` page view.
+    *   Create `/accounts/:accountId` page view.
     *   Implement Project Grid lists, health compliance status bars, and the Google Drive connection list.
 *   `[ ]` **Task 303: Buying Center Dashboard (WF-03)**
-    *   Create `/buying-centers/[centerId]` page view.
+    *   Create `/buying-centers/:centerId` page view.
     *   Implement stakeholder tree visualizer (hierarchical diagram representing roles and sentiment-colored borders).
     *   Create Connect History tabular registry and log interaction modal form.
 *   `[ ]` **Task 304: Project Governance Workspace (WF-04)**
-    *   Create `/accounts/[accountId]/projects/[projectId]` page view.
-    *   Build the 11-Checkpoints Compliance Grid mapping states (Completed, Pending, Overdue).
+    *   Create `/accounts/:accountId/projects/:projectId` page view.
+    *   Build the 10-Checkpoints Compliance Grid mapping states (Completed, Pending, Overdue).
     *   Assemble Risks & Action Items registries side-by-side.
 
 ---
@@ -89,7 +89,7 @@ Ensure code reliability, browser compatibility, and visual accuracy.
 *   `[ ]` **Task 602: E2E Playwright Flows**
     *   Write E2E scripts validating file upload -> AI draft generation -> edit -> publication flows.
 *   `[ ]` **Task 603: Production Bundle & Vercel deployment**
-    *   Validate Next.js build compilation. Set up environment variables and connect deployment pipeline.
+    *   Validate Vite production build compilation. Set up environment variables and connect deployment pipeline.
 *   `[ ]` **Task 604: Responsive Design Audits (250px - 4K TV)**
     *   Verify layout structures on small phones (down to 250px viewport) to ensure text size, spacing, and forms do not overflow.
     *   Audit interface on 4K TV viewports (3840px) to verify scaling cards, readable fonts, and responsive layout constraints.
