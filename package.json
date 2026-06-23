@@ -7,7 +7,7 @@
     "dev": "vite",
     "dev:stg": "vite --mode staging",
     "dev:prod": "vite --mode production",
-    "build": "GENERATE_SOURCEMAP=false && tsc && vite build",
+    "build": "tsc && vite build",
     "build-prod": "GENERATE_SOURCEMAP=false && tsc && vite build --mode production",
     "build-stg": "GENERATE_SOURCEMAP=false && tsc && vite build --mode staging",
     "lint": "eslint . --report-unused-disable-directives --max-warnings 0",
