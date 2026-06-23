@@ -115,6 +115,7 @@ export interface GovernanceRecord {
 export interface AIReport {
   id: string;
   projectId: string;
+  accountId?: string;
   type: 'WEEKLY_NOTES' | 'WBR' | 'GOVERNANCE_SUMMARY' | 'ACCOUNT_DIGEST';
   content: string;
   createdAt: string;
@@ -196,7 +197,7 @@ interface DataStore {
   recalculateGovernance: (projectId: string) => void;
 
   // AI Workspace
-  addAIReport: (projectId: string, type: AIReport['type'], content: string) => string;
+  addAIReport: (projectId: string, type: AIReport['type'], content: string, accountId?: string) => string;
   updateAIReport: (id: string, content: string) => void;
   publishAIReport: (id: string) => void;
 }
@@ -515,7 +516,17 @@ export const useDataStore = create<DataStore>((set, get) => ({
       status: 'OVERDUE',
     },
   ],
-  aiReports: [],
+  aiReports: [
+    {
+      id: 'rep-seed-macy',
+      projectId: 'proj-1',
+      accountId: 'acc-1',
+      type: 'ACCOUNT_DIGEST',
+      content: `# Account Digest – Macy's\n\n## Executive Summary\nMacy's remains a **Green** account with strong delivery governance scores. Both active projects are on track with high compliance rates. Stakeholder sentiment across the Digital Front buying center is predominantly positive.\n\n## Compliance Highlights\n- **WBR Compliance**: 100% – All Weekly Business Reviews completed on time for the current period.\n- **Weekly Notes Compliance**: 100% – All weekly notes filed for the current sprint cycle.\n- **Active Projects**: 2 (Loyalty Portal, Mobile Checkout) — Both in GREEN health status.\n\n## Risk Posture\nNo open risks recorded for Macy's projects at this time. The sandbox API integration for the Loyalty Portal remains under monitoring.\n\n## Stakeholder Sentiment\nKey stakeholders, including Jane Doe (VP of Digital Engineering) and Bob Johnson (Engineering Director), reflect positive engagement. Last connects recorded within the past week.\n\n## Recommendations\n1. Schedule a proactive check-in with Bob Johnson ahead of the Core Portal deployment milestone (June 30).\n2. Prepare the MBR report for end-of-June review — governance records are in good shape.\n3. Confirm artifact uploads for the Mobile Checkout sprint closure documentation.`,
+      createdAt: '2026-06-19 08:00',
+      status: 'PUBLISHED',
+    },
+  ],
 
   // CRUD Actions Implementation
   addUser: (user) =>
@@ -743,11 +754,12 @@ export const useDataStore = create<DataStore>((set, get) => ({
     }
   },
 
-  addAIReport: (projectId, type, content) => {
+  addAIReport: (projectId, type, content, accountId?) => {
     const id = `rep-${Date.now()}`;
     const newReport: AIReport = {
       id,
       projectId,
+      accountId,
       type,
       content,
       createdAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
