@@ -18,6 +18,7 @@ import {
   AIProcessingPage,
   AIWorkspacePage,
   UserManagementPage,
+  ProfilePage,
 } from './Lazyrout';
 
 // Role-Based Protected Route Guard Component
@@ -158,7 +159,20 @@ function Layout({ children }: { children: React.ReactNode }) {
 
         {user && (
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+            <Link
+              to="/profile"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'flex-end',
+                textDecoration: 'none',
+                cursor: 'pointer',
+                transition: 'opacity 0.2s',
+              }}
+              onMouseOver={(e) => (e.currentTarget.style.opacity = '0.85')}
+              onMouseOut={(e) => (e.currentTarget.style.opacity = '1')}
+              title="View profile"
+            >
               <span style={{ fontSize: '14px', fontWeight: 600, color: '#f3f4f6' }}>
                 {user.name}
               </span>
@@ -177,7 +191,7 @@ function Layout({ children }: { children: React.ReactNode }) {
               >
                 {user.role.replace('_', ' ')}
               </span>
-            </div>
+            </Link>
             <button
               onClick={logout}
               style={{
@@ -277,6 +291,18 @@ export default function AppRoutes() {
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN']}>
               <Layout>
                 <UserManagementPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* User Profile */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <ProfilePage />
               </Layout>
             </ProtectedRoute>
           }

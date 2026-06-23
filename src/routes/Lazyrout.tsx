@@ -31,3 +31,6 @@ export const GovernanceExceptionsPage = lazy(() => import('../pages/governance/e
 export const ArtifactUploadPage = lazy(() => import('../pages/ai-workspace/upload'));
 export const AIProcessingPage = lazy(() => import('../pages/ai-workspace/processing'));
 export const AIWorkspacePage = lazy(() => import('../pages/ai-workspace'));
+
+// Profile Page
+export const ProfilePage = lazy(() => import('../pages/profile'));
