@@ -198,7 +198,9 @@ interface DataStore {
   deleteMilestone: (id: string) => void;
 
   // Governance
-  completeGovernanceRecord: (id: string, notes?: string) => void;
+  isGovernanceLoading: boolean;
+  fetchGovernanceActivities: () => Promise<void>;
+  completeGovernanceRecord: (id: string, notes?: string) => Promise<void>;
   recalculateGovernance: (projectId: string) => void;
 
   // AI Workspace
@@ -208,6 +210,7 @@ interface DataStore {
 }
 
 export const useDataStore = create<DataStore>((set, get) => ({
+  isGovernanceLoading: false,
   // Default Mock Data
   users: [
     {
@@ -764,7 +767,64 @@ export const useDataStore = create<DataStore>((set, get) => ({
       milestones: state.milestones.filter((m) => m.id !== id),
     })),
 
-  completeGovernanceRecord: (id, notes) =>
+  fetchGovernanceActivities: async () => {
+    set({ isGovernanceLoading: true });
+    try {
+      const response = await api.get('/governance/activities');
+      let activities: any[] = [];
+      if (Array.isArray(response.data)) {
+        activities = response.data;
+      } else if (response.data?.success && Array.isArray(response.data.data)) {
+        activities = response.data.data;
+      } else if (response.data?.success && Array.isArray(response.data.data?.items)) {
+        activities = response.data.data.items;
+      }
+
+      if (activities.length > 0) {
+        const checkLabels: Record<string, string> = {
+          STANDUP: 'Daily Stand-Up',
+          WEEKLY_NOTE: 'Weekly Notes',
+          WBR: 'Weekly Business Review',
+          FBR: 'Fortnightly Business Review',
+          MBR: 'Monthly Business Review',
+          QBR: 'Quarterly Business Review',
+          STAKEHOLDER_1X1: 'Stakeholder 1:1',
+          SECURITY_REVIEW: 'Security Review',
+          NPS_FEEDBACK: 'NPS Feedback Survey',
+          EMPLOYEE_1X1: 'Employee 1:1',
+        };
+
+        const mappedRecords: GovernanceRecord[] = activities.map((act) => {
+          let type: GovernanceRecord['type'] = 'STANDUP';
+          if (act.type === 'DAILY_STANDUP') type = 'STANDUP';
+          else if (act.type === 'WEEKLY_NOTES') type = 'WEEKLY_NOTE';
+          else type = act.type as GovernanceRecord['type'];
+
+          const label = checkLabels[type] || type.replace('_', ' ');
+          const title = act.notes || `${label} Record`;
+
+          return {
+            id: act.id,
+            projectId: act.projectId,
+            type,
+            title,
+            dueDate: act.activityDate ? act.activityDate.substring(0, 10) : new Date().toISOString().substring(0, 10),
+            completedAt: act.isCompliant && act.updatedAt ? act.updatedAt.substring(0, 10) : undefined,
+            status: act.isCompliant ? 'COMPLETED' : (new Date(act.activityDate) < new Date() ? 'OVERDUE' : 'PENDING'),
+            notes: act.notes || undefined,
+          };
+        });
+        set({ governanceRecords: mappedRecords });
+      }
+    } catch (err) {
+      console.error('Failed to fetch governance activities:', err);
+    } finally {
+      set({ isGovernanceLoading: false });
+    }
+  },
+
+  completeGovernanceRecord: async (id, notes) => {
+    // 1. Immediately update the local state synchronously
     set((state) => ({
       governanceRecords: state.governanceRecords.map((r) =>
         r.id === id
@@ -772,11 +832,19 @@ export const useDataStore = create<DataStore>((set, get) => ({
               ...r,
               status: 'COMPLETED',
               completedAt: new Date().toISOString().substring(0, 10),
-              notes,
+              notes: notes || r.notes,
             }
           : r
       ),
-    })),
+    }));
+
+    // 2. Perform backend update
+    try {
+      await api.patch(`/governance/activities/${id}/complete`);
+    } catch (err) {
+      console.error('Failed to complete governance record on backend:', err);
+    }
+  },
 
   recalculateGovernance: (projectId) => {
     const records = get().governanceRecords.filter((r) => r.projectId === projectId);
