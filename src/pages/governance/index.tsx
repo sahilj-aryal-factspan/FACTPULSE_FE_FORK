@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDataStore } from '../../store/data-store';
 import GovernanceKPICard from './components/GovernanceKPICard';
@@ -44,9 +44,17 @@ export default function GovernanceCenterPage() {
     actions,
     completeGovernanceRecord,
     recalculateGovernance,
+    fetchGovernanceActivities,
+    isGovernanceLoading,
     updateRisk,
     updateAction,
   } = useDataStore();
+
+  useEffect(() => {
+    fetchGovernanceActivities().catch(() => {
+      // Keep using mock state if backend fetch is unavailable.
+    });
+  }, [fetchGovernanceActivities]);
 
   const [activeTab, setActiveTab] = useState<'overview' | 'activity' | 'risks' | 'trends'>(
     'overview'
@@ -169,12 +177,12 @@ export default function GovernanceCenterPage() {
   });
 
   /* ─── Handlers ───────────────────────────────────────────────────────────── */
-  const handleMarkComplete = (id: string) => {
+  const handleMarkComplete = async (id: string) => {
     const rec = governanceRecords.find((r) => r.id === id);
-    if (rec) {
-      completeGovernanceRecord(id, 'Marked done via Governance Command Center.');
-      recalculateGovernance(rec.projectId);
-    }
+    if (!rec) return;
+
+    await completeGovernanceRecord(id, 'Marked done via Governance Command Center.');
+    recalculateGovernance(rec.projectId);
   };
 
   const handleResolveRisk = (id: string) => updateRisk(id, { status: 'RESOLVED' });
