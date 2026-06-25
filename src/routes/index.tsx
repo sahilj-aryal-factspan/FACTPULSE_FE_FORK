@@ -1,6 +1,7 @@
 import React, { Suspense } from 'react';
 import { Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { useAuthStore } from '../store/auth-store';
+import { useDataStore } from '../store/data-store';
 import {
   LoginPage,
   LandingPage,
@@ -60,6 +61,13 @@ function Layout({ children }: { children: React.ReactNode }) {
   const logout = useAuthStore((state) => state.logout);
   const user = useAuthStore((state) => state.user);
   const location = useLocation();
+  const fetchProjects = useDataStore((state) => state.fetchProjects);
+
+  React.useEffect(() => {
+    if (user) {
+      fetchProjects().catch((err) => console.error('Failed to load projects:', err));
+    }
+  }, [user, fetchProjects]);
 
   const isLinkActive = (path: string) => {
     if (path === '/portfolio' && location.pathname === '/portfolio') return true;

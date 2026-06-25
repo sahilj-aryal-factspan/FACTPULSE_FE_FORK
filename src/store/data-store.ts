@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import api from '../api';
 
 // Types representing Database Tables
 export interface User {
@@ -164,9 +165,10 @@ interface DataStore {
   deleteStakeholder: (id: string) => void;
 
   // Projects
-  addProject: (project: Omit<Project, 'id'>) => void;
-  updateProject: (id: string, updates: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  fetchProjects: () => Promise<void>;
+  addProject: (project: Omit<Project, 'id'>) => Promise<void>;
+  updateProject: (id: string, updates: Partial<Project>) => Promise<void>;
+  deleteProject: (id: string) => Promise<void>;
 
   // Artifacts
   uploadArtifact: (
@@ -350,58 +352,7 @@ export const useDataStore = create<DataStore>((set, get) => ({
       nextScheduledConnect: '2026-06-18',
     },
   ],
-  projects: [
-    {
-      id: 'proj-1',
-      accountId: 'acc-1',
-      name: "Macy's Loyalty Portal",
-      status: 'ACTIVE',
-      health: 'GREEN',
-      complianceRate: 95,
-      details: 'Customer loyalty rewards program integration and web portal interface.',
-      lead: 'Sahil Jaryal',
-    },
-    {
-      id: 'proj-2',
-      accountId: 'acc-1',
-      name: "Macy's Mobile Checkout",
-      status: 'ACTIVE',
-      health: 'GREEN',
-      complianceRate: 90,
-      details: 'In-store scan & go mobile feature allowing shoppers to scan barcodes and pay via app.',
-      lead: 'Delivery Manager',
-    },
-    {
-      id: 'proj-3',
-      accountId: 'acc-2',
-      name: 'CVS Caremark Integration',
-      status: 'ACTIVE',
-      health: 'AMBER',
-      complianceRate: 72,
-      details: 'Integration of pharmacy benefits management platform with health tracking APIs.',
-      lead: 'Bob Johnson',
-    },
-    {
-      id: 'proj-4',
-      accountId: 'acc-2',
-      name: 'CVS Vaccine Scheduler',
-      status: 'ACTIVE',
-      health: 'GREEN',
-      complianceRate: 85,
-      details: 'Online appointment booking and notification stream for seasonal vaccine distributions.',
-      lead: 'Macy Account Manager',
-    },
-    {
-      id: 'proj-5',
-      accountId: 'acc-3',
-      name: 'Baptist EHR Modernization',
-      status: 'ACTIVE',
-      health: 'RED',
-      complianceRate: 42,
-      details: 'Migration of electronic health records from legacy databases to cloud-hosted platform.',
-      lead: 'Sahil Jaryal',
-    },
-  ],
+  projects: [],
   artifacts: [
     {
       id: 'art-1',
@@ -631,63 +582,101 @@ export const useDataStore = create<DataStore>((set, get) => ({
       stakeholders: state.stakeholders.filter((s) => s.id !== id),
     })),
 
-  addProject: (proj) => {
-    const projectId = `proj-${Date.now()}`;
-    const defaultRecords: GovernanceRecord[] = [
-      {
-        id: `gov-${Date.now()}-1`,
-        projectId,
-        type: 'STANDUP',
-        title: 'Daily Standup Check',
-        dueDate: new Date(Date.now() + 86400000).toISOString().substring(0, 10),
-        status: 'PENDING',
-      },
-      {
-        id: `gov-${Date.now()}-2`,
-        projectId,
-        type: 'WEEKLY_NOTE',
-        title: 'Weekly Note - Week 25',
-        dueDate: new Date(Date.now() + 86400000 * 7).toISOString().substring(0, 10),
-        status: 'PENDING',
-      },
-      {
-        id: `gov-${Date.now()}-3`,
-        projectId,
-        type: 'WBR',
-        title: 'WBR - Week 25',
-        dueDate: new Date(Date.now() + 86400000 * 5).toISOString().substring(0, 10),
-        status: 'PENDING',
-      },
-      {
-        id: `gov-${Date.now()}-4`,
-        projectId,
-        type: 'MBR',
-        title: 'MBR - June 2026',
-        dueDate: new Date(Date.now() + 86400000 * 14).toISOString().substring(0, 10),
-        status: 'PENDING',
-      },
-      {
-        id: `gov-${Date.now()}-5`,
-        projectId,
-        type: 'QBR',
-        title: 'QBR - Q2 2026',
-        dueDate: new Date(Date.now() + 86400000 * 30).toISOString().substring(0, 10),
-        status: 'PENDING',
-      },
-    ];
-    set((state) => ({
-      projects: [...state.projects, { ...proj, id: projectId }],
-      governanceRecords: [...state.governanceRecords, ...defaultRecords],
-    }));
+  fetchProjects: async () => {
+    try {
+      const response = await api.get('/projects');
+      if (response.data?.success && response.data.data?.items) {
+        set({ projects: response.data.data.items });
+      }
+    } catch (err) {
+      console.error('Failed to fetch projects:', err);
+    }
   },
-  updateProject: (id, updates) =>
-    set((state) => ({
-      projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
-    })),
-  deleteProject: (id) =>
-    set((state) => ({
-      projects: state.projects.filter((p) => p.id !== id),
-    })),
+
+  addProject: async (proj) => {
+    try {
+      const response = await api.post('/projects', proj);
+      if (response.data?.success && response.data.data) {
+        const newProj = response.data.data;
+        const projectId = newProj.id;
+        const defaultRecords: GovernanceRecord[] = [
+          {
+            id: `gov-${Date.now()}-1`,
+            projectId,
+            type: 'STANDUP',
+            title: 'Daily Standup Check',
+            dueDate: new Date(Date.now() + 86400000).toISOString().substring(0, 10),
+            status: 'PENDING',
+          },
+          {
+            id: `gov-${Date.now()}-2`,
+            projectId,
+            type: 'WEEKLY_NOTE',
+            title: 'Weekly Note - Week 25',
+            dueDate: new Date(Date.now() + 86400000 * 7).toISOString().substring(0, 10),
+            status: 'PENDING',
+          },
+          {
+            id: `gov-${Date.now()}-3`,
+            projectId,
+            type: 'WBR',
+            title: 'WBR - Week 25',
+            dueDate: new Date(Date.now() + 86400000 * 5).toISOString().substring(0, 10),
+            status: 'PENDING',
+          },
+          {
+            id: `gov-${Date.now()}-4`,
+            projectId,
+            type: 'MBR',
+            title: 'MBR - June 2026',
+            dueDate: new Date(Date.now() + 86400000 * 14).toISOString().substring(0, 10),
+            status: 'PENDING',
+          },
+          {
+            id: `gov-${Date.now()}-5`,
+            projectId,
+            type: 'QBR',
+            title: 'QBR - Q2 2026',
+            dueDate: new Date(Date.now() + 86400000 * 30).toISOString().substring(0, 10),
+            status: 'PENDING',
+          },
+        ];
+        set((state) => ({
+          projects: [...state.projects, newProj],
+          governanceRecords: [...state.governanceRecords, ...defaultRecords],
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to add project:', err);
+    }
+  },
+
+  updateProject: async (id, updates) => {
+    try {
+      const response = await api.patch(`/projects/${id}`, updates);
+      if (response.data?.success && response.data.data) {
+        const updatedProj = response.data.data;
+        set((state) => ({
+          projects: state.projects.map((p) => (p.id === id ? updatedProj : p)),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to update project:', err);
+    }
+  },
+
+  deleteProject: async (id) => {
+    try {
+      const response = await api.delete(`/projects/${id}`);
+      if (response.data?.success) {
+        set((state) => ({
+          projects: state.projects.filter((p) => p.id !== id),
+        }));
+      }
+    } catch (err) {
+      console.error('Failed to delete project:', err);
+    }
+  },
 
   uploadArtifact: (projectId, file) => {
     const id = `art-${Date.now()}`;
