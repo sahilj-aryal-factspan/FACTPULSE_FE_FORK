@@ -8,6 +8,7 @@ export default function ProjectsListPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'ACTIVE' | 'ARCHIVED'>('ALL');
   const [healthFilter, setHealthFilter] = useState<'ALL' | 'GREEN' | 'AMBER' | 'RED'>('ALL');
+  const [typeFilter, setTypeFilter] = useState<'ALL' | 'CUSTOMER_MANAGED' | 'INTERNAL_TEAM_MANAGED'>('ALL');
 
   const user = useAuthStore((state) => state.user);
   const canCreateProject = user && ['PLATFORM_ADMIN', 'ACCOUNT_LEAD', 'DELIVERY_LEAD'].includes(user.role);
@@ -20,8 +21,9 @@ export default function ProjectsListPage() {
 
     const matchesStatus = statusFilter === 'ALL' || p.status === statusFilter;
     const matchesHealth = healthFilter === 'ALL' || p.health === healthFilter;
+    const matchesType = typeFilter === 'ALL' || p.projectType === typeFilter;
 
-    return matchesSearch && matchesStatus && matchesHealth;
+    return matchesSearch && matchesStatus && matchesHealth && matchesType;
   });
 
   const getHealthBadgeStyle = (health: 'GREEN' | 'AMBER' | 'RED') => {
@@ -175,6 +177,34 @@ export default function ProjectsListPage() {
             </button>
           ))}
         </div>
+
+        {/* Type Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Type:</span>
+          {([
+            { value: 'ALL', label: 'ALL' },
+            { value: 'CUSTOMER_MANAGED', label: 'Customer' },
+            { value: 'INTERNAL_TEAM_MANAGED', label: 'Internal' }
+          ] as const).map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setTypeFilter(opt.value)}
+              style={{
+                background: typeFilter === opt.value ? '#1e3a8a' : '#ffffff',
+                color: typeFilter === opt.value ? '#ffffff' : '#475569',
+                border: `1px solid ${typeFilter === opt.value ? '#1e3a8a' : '#cbd5e1'}`,
+                padding: '6px 12px',
+                borderRadius: '6px',
+                cursor: 'pointer',
+                fontSize: '13px',
+                fontWeight: 600,
+                transition: 'all 0.2s',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Projects Directory Table */}
@@ -201,6 +231,7 @@ export default function ProjectsListPage() {
             >
               <th style={{ padding: '16px 24px' }}>Project Name</th>
               <th style={{ padding: '16px 24px' }}>Account</th>
+              <th style={{ padding: '16px 24px' }}>Management Type</th>
               <th style={{ padding: '16px 24px' }}>Health</th>
               <th style={{ padding: '16px 24px' }}>Status</th>
               <th style={{ padding: '16px 24px' }}>Compliance Rate</th>
@@ -234,6 +265,22 @@ export default function ProjectsListPage() {
                     </td>
                     <td style={{ padding: '16px 24px', color: '#1e293b' }}>
                       🏢 {account?.name || 'Unknown'}
+                    </td>
+                    <td style={{ padding: '16px 24px' }}>
+                      <span
+                        style={{
+                          fontSize: '12px',
+                          fontWeight: 600,
+                          padding: '4px 8px',
+                          borderRadius: '6px',
+                          color: p.projectType === 'INTERNAL_TEAM_MANAGED' ? '#1e3a8a' : '#475569',
+                          background: p.projectType === 'INTERNAL_TEAM_MANAGED' ? '#eff6ff' : '#f1f5f9',
+                          border: p.projectType === 'INTERNAL_TEAM_MANAGED' ? '1px solid #bfdbfe' : '1px solid #e2e8f0',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {p.projectType === 'INTERNAL_TEAM_MANAGED' ? 'Internal Team Managed' : 'Customer Managed'}
+                      </span>
                     </td>
                     <td style={{ padding: '16px 24px' }}>
                       <span
@@ -309,7 +356,7 @@ export default function ProjectsListPage() {
               })
             ) : (
               <tr>
-                <td colSpan={6} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
+                <td colSpan={7} style={{ padding: '32px', textAlign: 'center', color: '#94a3b8' }}>
                   No projects found matching search constraints.
                 </td>
               </tr>

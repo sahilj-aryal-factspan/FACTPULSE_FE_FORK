@@ -1028,6 +1028,132 @@ export default function ProjectDashboardPage() {
           {/* RIGHT: Stakeholder Sentiment Panel */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
 
+            {/* Defined Project Stakeholders Card */}
+            <div
+              style={{
+                background: '#ffffff',
+                borderRadius: '16px',
+                border: '1.5px solid #e2e8f0',
+                padding: '24px',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+              }}
+            >
+              <h3 style={{ margin: '0 0 16px 0', color: '#1e3a8a', fontSize: '16px', fontWeight: 800 }}>
+                📋 Project Governance Setup
+              </h3>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Project Type</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                    {project.projectType === 'INTERNAL_TEAM_MANAGED' ? 'Internal Team Managed' : 'Customer Managed'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Project Lead</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                    {project.lead || 'Not Assigned'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Senior Director</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                    {project.seniorDirector || 'Not Assigned'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Vice President</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                    {project.vicePresident || 'Not Assigned'}
+                  </div>
+                </div>
+
+                <div style={{ padding: '8px 12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px solid #e2e8f0' }}>
+                  <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Supervisor</div>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                    {project.supervisor || 'Not Assigned'}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Sprint Metrics Card (Only if Internal Team Managed) */}
+            {project.projectType === 'INTERNAL_TEAM_MANAGED' ? (
+              <div
+                style={{
+                  background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                  borderRadius: '16px',
+                  border: '1.5px solid #bfdbfe',
+                  padding: '24px',
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
+                }}
+              >
+                <h3 style={{ margin: '0 0 16px 0', color: '#1e40af', fontSize: '16px', fontWeight: 800 }}>
+                  🏃‍♂️ Internal Sprint Metrics
+                </h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <div style={{ flex: 1, padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Start Date</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                        {project.sprintStartDate ? project.sprintStartDate.substring(0, 10) : '—'}
+                      </div>
+                    </div>
+                    <div style={{ flex: 1, padding: '8px 10px', background: '#ffffff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>End Date</div>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                        {project.sprintEndDate ? project.sprintEndDate.substring(0, 10) : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '8px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #bfdbfe' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>
+                      <span>Delivery Performance</span>
+                      <span style={{ color: '#1e40af', fontWeight: 800 }}>{project.deliveryPerformance !== undefined && project.deliveryPerformance !== null ? `${project.deliveryPerformance}%` : '—'}</span>
+                    </div>
+                    {project.deliveryPerformance !== undefined && project.deliveryPerformance !== null ? (
+                      <div style={{ width: '100%', height: '6px', background: '#e2e8f0', borderRadius: '3px', marginTop: '6px', overflow: 'hidden' }}>
+                        <div style={{ width: `${project.deliveryPerformance}%`, height: '100%', background: '#2563eb', borderRadius: '3px' }} />
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div style={{ padding: '8px 12px', background: '#ffffff', borderRadius: '8px', border: '1px solid #bfdbfe', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div>
+                      <div style={{ fontSize: '10px', fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase' }}>Sprint Overflow</div>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: '#1e293b', marginTop: '2px' }}>
+                        {project.overflow !== undefined && project.overflow !== null ? `${project.overflow} tasks` : '—'}
+                      </div>
+                    </div>
+                    {project.overflow !== undefined && project.overflow !== null && project.overflow > 0 ? (
+                      <span style={{ background: '#fee2e2', color: '#ef4444', fontSize: '10px', fontWeight: 700, padding: '3px 8px', borderRadius: '12px' }}>
+                        Carry-over
+                      </span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div
+                style={{
+                  background: '#f8fafc',
+                  borderRadius: '16px',
+                  border: '1.5px solid #e2e8f0',
+                  padding: '16px 24px',
+                  textAlign: 'center',
+                  fontSize: '12px',
+                  color: '#64748b',
+                }}
+              >
+                ℹ️ Customer managed project. Internal sprint metrics tracking not required.
+              </div>
+            )}
+
             {/* Sentiment Overview Card */}
             <div
               style={{
