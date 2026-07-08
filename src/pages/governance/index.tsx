@@ -664,7 +664,11 @@ export default function GovernanceCenterPage() {
       )}
 
       {/* ── TAB: Trends ───────────────────────────────────────────────────── */}
-      {activeTab === 'trends' && <GovernanceTrends data={TREND_DATA} />}
+      {activeTab === 'trends' && (
+        <GovernanceTrends
+          data={dataStore.trendsData && dataStore.trendsData.length > 0 ? dataStore.trendsData : TREND_DATA}
+        />
+      )}
     </div>
   );
 }

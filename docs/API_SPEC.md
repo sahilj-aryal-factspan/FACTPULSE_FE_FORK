@@ -167,48 +167,20 @@ The Fact+Pulse frontend interacts with a NestJS backend via REST APIs. All front
 
 ---
 
-## 3. Custom Query Hooks (TanStack Query)
-Implemented under `src/hooks/` to bind services to React component states:
+## 3. Global State Synchronization (Zustand Store)
+All client-side API synchronization is managed under the central Zustand hook [data-store.ts](file:///d:/New%20Laptop/Office%20Data/Documents/FACTSPAN/FACTPULSE_FE/src/store/data-store.ts).
 
-```typescript
-// Fetching Portfolio Stats
-export const usePortfolioSummary = () => {
-  return useQuery({
-    queryKey: ['portfolio', 'summary'],
-    queryFn: () => apiClient.get('/portfolio/summary').then(res => res.data)
-  });
-};
+### 3.1 Initial Synchronization
+* **`syncWithBackend()`**: Initiates parallelized fetch calls to load portfolio summary stats, AI digests, governance trends, accounts, projects, risks, action items, decisions, and raw artifacts from the backend NestJS server. Called during the initial bootstrap of the main workspace pages.
 
-// Creating Account
-export const useCreateAccount = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: { name: string; logoUrl?: string }) => apiClient.post('/accounts', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['accounts', 'list'] });
-    }
-  });
-};
-
-// Creating Project
-export const useCreateProject = () => {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (data: any) => apiClient.post('/projects', data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['projects', 'list'] });
-    }
-  });
-};
-
-// Generating AI Draft
-export const useGenerateDraft = () => {
-  return useMutation({
-    mutationFn: (payload: { type: string; projectId: string; sourceDocumentIds: string[] }) =>
-      apiClient.post('/ai/generate', payload).then(res => res.data)
-  });
-};
-```
+### 3.2 State Modifier Actions (CRUD)
+* **`addProject(proj)`**: Sends a `POST /api/v1/projects` request. Displays a multi-step loading splash screen overlay showing workspace configuration, checkpoint auto-seeding, and database setup tasks before redirecting to the project dashboard page.
+* **`deleteProject(id)`**: Sends a `DELETE /api/v1/projects/:id` request, which cascades delete operations in the PostgreSQL database. Updates local Zustand lists dynamically and navigates back to the Portfolio dashboard.
+* **`uploadArtifact(projectId, file, type, size)`**: Uploads parsed artifacts via `POST /api/v1/artifacts/upload`. Runs synchronous OpenAI classification, risk/action item bifurcation, and project/account RAG status recalculations on the server. Immediately calls `syncWithBackend()` during file processing redirect transitions.
+* **`addRisk(projectId, risk)`** / **`updateRisk(id, updates)`** / **`deleteRisk(id)`**: Directly updates risk entities via `POST`, `PUT`, and `DELETE` endpoints under `/api/v1/risks`. Automatically triggers `recalculateProjectAndAccount()` on backend triggers.
+* **`addAction(projectId, action)`** / **`updateAction(id, updates)`** / **`deleteAction(id)`**: Directly manages actions via endpoints under `/api/v1/action-items`.
+* **`addDecision(projectId, decision)`** / **`deleteDecision(id)`**: Directly manages decision history entries under `/api/v1/decisions`.
+* **`addAIReport(projectId, type, content)`**: Generated dynamically via `POST /api/v1/artifacts/generate-draft`. Synthesizes Week Notes, WBRs, and Digests using OpenAI from selected artifact texts (with automatic database logs fallback).
 
 ---
 

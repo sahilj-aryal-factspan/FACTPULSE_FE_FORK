@@ -22,6 +22,10 @@ export default function ProjectFormPage() {
   const [staffingCount, setStaffingCount] = useState<number | ''>('');
   const [staffingHealth, setStaffingHealth] = useState<number | ''>(100);
   
+  // Client Managed Staffing Inputs
+  const [membersNeeded, setMembersNeeded] = useState<number | ''>('');
+  const [membersDeployed, setMembersDeployed] = useState<number | ''>('');
+  
   // Compliance
   const [wbrCompliance, setWbrCompliance] = useState(false);
   const [mbrCompliance, setMbrCompliance] = useState(false);
@@ -29,6 +33,9 @@ export default function ProjectFormPage() {
 
   // NPS
   const [npsScore, setNpsScore] = useState<number | ''>('');
+
+  const [loading, setLoading] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(1);
 
   useEffect(() => {
     if (isEdit && project) {
@@ -43,6 +50,13 @@ export default function ProjectFormPage() {
       setMbrCompliance(project.mbrCompliance ?? false);
       setQbrCompliance(project.qbrCompliance ?? false);
       setNpsScore(project.npsScore ?? '');
+
+      if (project.managementType === 'CLIENT_MANAGED' && project.staffingCount) {
+        setMembersDeployed(project.staffingCount);
+        const healthPct = project.staffingHealth ?? 100;
+        const needed = healthPct > 0 ? Math.round(project.staffingCount / (healthPct / 100)) : project.staffingCount;
+        setMembersNeeded(needed);
+      }
     }
   }, [isEdit, project]);
 
@@ -50,21 +64,35 @@ export default function ProjectFormPage() {
     e.preventDefault();
     if (!name || !selectedAccountId) return;
 
+    let finalStaffingCount = staffingCount !== '' ? Number(staffingCount) : undefined;
+    let finalStaffingHealth = staffingHealth !== '' ? Number(staffingHealth) : undefined;
+
+    if (managementType === 'CLIENT_MANAGED') {
+      if (membersNeeded !== '' && membersDeployed !== '') {
+        finalStaffingCount = Number(membersDeployed);
+        finalStaffingHealth = Math.round((Number(membersDeployed) / Number(membersNeeded)) * 100);
+      }
+    }
+
     const payload = {
       name,
       managementType,
       sprintVelocity: managementType === 'FS_MANAGED' && sprintVelocity !== '' ? Number(sprintVelocity) : undefined,
       throughputRate: managementType === 'FS_MANAGED' && throughputRate !== '' ? Number(throughputRate) : undefined,
-      staffingCount: staffingCount !== '' ? Number(staffingCount) : undefined,
-      staffingHealth: staffingHealth !== '' ? Number(staffingHealth) : undefined,
+      staffingCount: finalStaffingCount,
+      staffingHealth: finalStaffingHealth,
       wbrCompliance,
       mbrCompliance,
       qbrCompliance,
       npsScore: npsScore !== '' ? Number(npsScore) : undefined,
     };
 
+    setLoading(true);
+    setLoadingStep(1);
+
     if (isEdit && projectId) {
       await updateProject(projectId, payload);
+      setLoading(false);
       navigate(`/accounts/${selectedAccountId}/projects/${projectId}`);
     } else {
       const newId = await addProject({
@@ -73,6 +101,20 @@ export default function ProjectFormPage() {
         health: 'GREEN',
         ...payload,
       });
+
+      const steps = [
+        { step: 2, delay: 600 },
+        { step: 3, delay: 1200 },
+        { step: 4, delay: 1800 },
+      ];
+
+      for (const s of steps) {
+        await new Promise((resolve) => setTimeout(resolve, 600));
+        setLoadingStep(s.step);
+      }
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      setLoading(false);
       navigate(`/accounts/${selectedAccountId}/projects/${newId}`);
     }
   };
@@ -87,6 +129,91 @@ export default function ProjectFormPage() {
 
   return (
     <div style={{ padding: '32px', maxWidth: '700px', margin: '0 auto', width: '100%' }}>
+      {loading && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(15, 23, 42, 0.95)',
+            zIndex: 9999,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#ffffff',
+            backdropFilter: 'blur(8px)',
+          }}
+        >
+          {/* Stunning Spinner */}
+          <div
+            style={{
+              position: 'relative',
+              width: '80px',
+              height: '80px',
+              marginBottom: '24px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div
+              style={{
+                border: '6px solid rgba(255, 255, 255, 0.1)',
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                borderLeftColor: '#3b82f6',
+                borderRightColor: '#8b5cf6',
+                animation: 'spin 1.5s linear infinite',
+              }}
+            />
+            <span style={{ position: 'absolute', fontSize: '32px' }}>🚀</span>
+          </div>
+
+          <style>{`
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}</style>
+
+          {/* Progress Indicators */}
+          <h2 style={{ fontSize: '22px', fontWeight: 700, margin: '0 0 8px 0', color: '#f8fafc' }}>
+            Setting Up Project Environment
+          </h2>
+          <p style={{ color: '#94a3b8', fontSize: '14px', margin: '0 0 24px 0' }}>
+            Creating databases, default schemas, and governance check-gates...
+          </p>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', minWidth: '320px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: loadingStep >= 1 ? 1 : 0.4 }}>
+              <span style={{ color: loadingStep > 1 ? '#34a853' : '#3b82f6', fontWeight: 'bold' }}>
+                {loadingStep > 1 ? '✓' : '●'}
+              </span>
+              <span style={{ fontSize: '14px' }}>Creating project configuration in database</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: loadingStep >= 2 ? 1 : 0.4 }}>
+              <span style={{ color: loadingStep > 2 ? '#34a853' : loadingStep === 2 ? '#3b82f6' : '#94a3b8', fontWeight: 'bold' }}>
+                {loadingStep > 2 ? '✓' : '●'}
+              </span>
+              <span style={{ fontSize: '14px' }}>Auto-seeding default governance checkpoints</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: loadingStep >= 3 ? 1 : 0.4 }}>
+              <span style={{ color: loadingStep > 3 ? '#34a853' : loadingStep === 3 ? '#3b82f6' : '#94a3b8', fontWeight: 'bold' }}>
+                {loadingStep > 3 ? '✓' : '●'}
+              </span>
+              <span style={{ fontSize: '14px' }}>Recalculating delivery governance scores</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', opacity: loadingStep >= 4 ? 1 : 0.4 }}>
+              <span style={{ color: loadingStep === 4 ? '#3b82f6' : '#94a3b8', fontWeight: 'bold' }}>●</span>
+              <span style={{ fontSize: '14px' }}>Redirecting to project workspace dashboard</span>
+            </div>
+          </div>
+        </div>
+      )}
       <button
         onClick={handleCancel}
         style={{
@@ -201,52 +328,78 @@ export default function ProjectFormPage() {
           {/* Section: Staffing Metrics */}
           <div style={{ marginBottom: '32px', borderBottom: '1px solid #f1f5f9', paddingBottom: '24px' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Staffing Metrics</h3>
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
-                  Staffing Count (people)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                  value={staffingCount}
-                  onChange={(e) => setStaffingCount(e.target.value ? Number(e.target.value) : '')}
-                />
+            {managementType === 'CLIENT_MANAGED' ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'flex', gap: '16px' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
+                      Total Members Needed *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                      value={membersNeeded}
+                      onChange={(e) => setMembersNeeded(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="e.g. 5"
+                    />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
+                      Members Currently Deployed *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0"
+                      style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                      value={membersDeployed}
+                      onChange={(e) => setMembersDeployed(e.target.value ? Number(e.target.value) : '')}
+                      placeholder="e.g. 4"
+                    />
+                  </div>
+                </div>
+                {membersNeeded && membersDeployed !== '' && (
+                  <div style={{ fontSize: '13px', color: '#1e3a8a', fontWeight: 600 }}>
+                    Calculated Staffing Health Score: {Math.round((Number(membersDeployed) / Number(membersNeeded)) * 100)}%
+                  </div>
+                )}
               </div>
-              <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
-                  Staffing Health (%)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  max="100"
-                  style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
-                  value={staffingHealth}
-                  onChange={(e) => setStaffingHealth(e.target.value ? Number(e.target.value) : '')}
-                />
+            ) : (
+              <div style={{ display: 'flex', gap: '16px' }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
+                    Staffing Count (people)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                    value={staffingCount}
+                    onChange={(e) => setStaffingCount(e.target.value ? Number(e.target.value) : '')}
+                  />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>
+                    Staffing Health (%)
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    style={{ width: '100%', padding: '10px 12px', border: '1px solid #cbd5e1', borderRadius: '6px', fontSize: '14px', boxSizing: 'border-box' }}
+                    value={staffingHealth}
+                    onChange={(e) => setStaffingHealth(e.target.value ? Number(e.target.value) : '')}
+                  />
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Section: Compliance & Governance */}
           <div style={{ marginBottom: '32px', borderBottom: '1px solid #f1f5f9', paddingBottom: '24px' }}>
             <h3 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Compliance & Governance</h3>
-            <div style={{ display: 'flex', gap: '24px', marginBottom: '20px' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#334155', cursor: 'pointer' }}>
-                <input type="checkbox" checked={wbrCompliance} onChange={(e) => setWbrCompliance(e.target.checked)} />
-                WBR Compliant
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#334155', cursor: 'pointer' }}>
-                <input type="checkbox" checked={mbrCompliance} onChange={(e) => setMbrCompliance(e.target.checked)} />
-                MBR Compliant
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '14px', color: '#334155', cursor: 'pointer' }}>
-                <input type="checkbox" checked={qbrCompliance} onChange={(e) => setQbrCompliance(e.target.checked)} />
-                QBR Compliant
-              </label>
-            </div>
             
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontWeight: 600, fontSize: '14px', color: '#334155' }}>

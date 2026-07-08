@@ -29,28 +29,36 @@ export default function AIWorkspacePage() {
     );
   };
 
-  const handleGenerate = () => {
+  const handleGenerate = async () => {
+    if (!selectedProjectId) return;
     setLoading(true);
-    const selectedProjectName = projects.find((p) => p.id === selectedProjectId)?.name || 'Project';
 
-    // Mock content generation based on type
-    setTimeout(() => {
-      let content = '';
-      if (reportType === 'WEEKLY_NOTES') {
-        content = `# Weekly Notes - ${selectedProjectName}\n\n## 1. Executive Summary\nAll weekly deliverables are on track. Code integration for authentication SSO modules has been completed successfully.\n\n## 2. Key Accomplishments\n- Migrated repository context definitions to Vite React configuration.\n- Standardized client routing controls and route guards.\n\n## 3. Risks & Roadblocks\n- Delay in Sandbox API keys white-listing from enterprise network administration team.\n\n## 4. Key Decisions\n- Migration to React Router DOM v7 for guarding admin routes.\n`;
-      } else if (reportType === 'WBR') {
-        content = `# Weekly Business Review (WBR) - ${selectedProjectName}\n\n## 1. Compliance Metric Overview\n- Review compliance rate: **90%**\n- Open Action Items: **3**\n- Active Risks: **1**\n\n## 2. Milestone Alignment Status\n- Deploy Core Portal: On Track (Target June 30)\n- Sandbox Integration Phase 1: Delayed\n\n## 3. Escalations & Asks\nNeed network whitelist approval from the client sponsor to unblock sandbox development.\n`;
-      } else if (reportType === 'GOVERNANCE_SUMMARY') {
-        content = `# Governance Summary - ${selectedProjectName}\n\nThis summary digests all recent delivery activities. 10 core governance check-gates are tracked. Compliance rate is at optimal thresholds. RAG status is GREEN. Review meetings completed on schedule.\n`;
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/artifacts/generate-draft', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectId: selectedProjectId,
+          type: reportType,
+          artifactIds: selectedArtifacts,
+        }),
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        const content = payload.data.content;
+        const reportId = addAIReport(selectedProjectId, reportType, content);
+        setActiveReportId(reportId);
+        setEditorText(content);
       } else {
-        content = `# Account Digest - ${selectedProjectName}\n\nClient sentiment remains neutral-to-positive. Relationship tenure is healthy. Recommended next scheduled contact is in 5 days. Checkpoint audits indicate all critical actions are documented.\n`;
+        throw new Error('Failed to generate dynamic AI report.');
       }
-
-      const reportId = addAIReport(selectedProjectId, reportType, content);
-      setActiveReportId(reportId);
-      setEditorText(content);
+    } catch (e) {
+      console.error(e);
+      alert('Error generating draft report: ' + e.message);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleSave = () => {

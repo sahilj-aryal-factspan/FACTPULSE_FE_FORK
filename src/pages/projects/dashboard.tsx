@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '../../store/data-store';
 import type { GovernanceRecord, Risk, Action, Decision, Milestone } from '../../store/data-store';
 
 export default function ProjectDashboardPage() {
   const { accountId, projectId } = useParams<{ accountId: string; projectId: string }>();
+  const navigate = useNavigate();
   const {
     accounts,
     projects,
@@ -23,6 +24,7 @@ export default function ProjectDashboardPage() {
     deleteDecision,
     completeGovernanceRecord,
     recalculateGovernance,
+    deleteProject,
   } = useDataStore();
 
   const account = (accounts || []).find((a) => a.id === accountId);
@@ -97,6 +99,18 @@ export default function ProjectDashboardPage() {
     recalculateGovernance(project.id);
   };
 
+  const handleDeleteProject = async () => {
+    if (
+      window.confirm(
+        `Are you sure you want to delete the project "${project.name}"? This will permanently delete all checkpoints, risks, action items, and documents.`
+      )
+    ) {
+      await deleteProject(project.id);
+      alert('Project deleted successfully.');
+      navigate('/portfolio');
+    }
+  };
+
   const getRagBadgeStyle = (status: 'GREEN' | 'AMBER' | 'RED') => {
     switch (status) {
       case 'GREEN':
@@ -159,7 +173,7 @@ export default function ProjectDashboardPage() {
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <h1 style={{ color: '#1e3a8a', margin: 0, fontSize: '24px', fontWeight: 700 }}>
               {project.name}
             </h1>
@@ -174,6 +188,33 @@ export default function ProjectDashboardPage() {
             >
               {project.health} Health
             </span>
+            <button
+              onClick={handleDeleteProject}
+              style={{
+                background: '#fde8e8',
+                color: '#e02424',
+                border: '1px solid #f8b4b4',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                fontSize: '11px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px',
+              }}
+              onMouseOver={(e) => {
+                e.currentTarget.style.backgroundColor = '#fbd5d5';
+                e.currentTarget.style.borderColor = '#f05252';
+              }}
+              onMouseOut={(e) => {
+                e.currentTarget.style.backgroundColor = '#fde8e8';
+                e.currentTarget.style.borderColor = '#f8b4b4';
+              }}
+            >
+              🗑 Delete Project
+            </button>
           </div>
           <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '13px' }}>
             Account Partner: {account?.name || 'Unknown'} • Status: {project.status}
@@ -273,18 +314,20 @@ export default function ProjectDashboardPage() {
           }}
         >
           {projectGovRecords.map((r) => {
-            const statusColor = getGovStatusColor(r.isCompliant);
             return (
               <div
                 key={r.id}
                 style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '10px',
-                  padding: '16px',
+                  border: r.isCompliant ? '1px solid #bcf0da' : '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '18px',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'space-between',
-                  background: r.isCompliant ? 'rgba(16,185,129,0.02)' : 'transparent',
+                  background: r.isCompliant ? 'linear-gradient(135deg, #f3faf7 0%, #def7ec 100%)' : '#ffffff',
+                  boxShadow: '0 4px 6px -1px rgba(0,0,0,0.02), 0 2px 4px -1px rgba(0,0,0,0.01)',
+                  transition: 'transform 0.2s, box-shadow 0.2s',
+                  position: 'relative',
                 }}
               >
                 <div>
@@ -293,34 +336,57 @@ export default function ProjectDashboardPage() {
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
-                      marginBottom: '12px',
+                      marginBottom: '14px',
                     }}
                   >
                     <span
                       style={{
-                        fontSize: '10px',
-                        background: '#f1f5f9',
-                        color: '#475569',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontWeight: 700,
+                        fontSize: '9px',
+                        background: r.isCompliant ? '#bcf0da' : '#f1f5f9',
+                        color: r.isCompliant ? '#03543f' : '#475569',
+                        padding: '3px 8px',
+                        borderRadius: '6px',
+                        fontWeight: 800,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px',
                       }}
                     >
                       {r.type.replace('_', ' ')}
                     </span>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: statusColor }}>
-                      ● {r.isCompliant ? 'COMPLIANT' : 'NON-COMPLIANT'}
+                    <span
+                      style={{
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        color: r.isCompliant ? '#03543f' : '#9b1c1c',
+                        background: r.isCompliant ? '#def7ec' : '#fde8e8',
+                        padding: '2px 8px',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span
+                        style={{
+                          width: '5px',
+                          height: '5px',
+                          borderRadius: '50%',
+                          background: r.isCompliant ? '#31c48d' : '#f8b4b4',
+                        }}
+                      />
+                      {r.isCompliant ? 'COMPLIANT' : 'NON-COMPLIANT'}
                     </span>
                   </div>
                   <h5
                     style={{
-                      margin: '0 0 4px 0',
-                      fontSize: '14px',
+                      margin: '8px 0 4px 0',
+                      fontSize: '15px',
                       color: '#1e3a8a',
                       fontWeight: 700,
+                      lineHeight: '1.2',
                     }}
                   >
-                    {r.type} Checkpoint
+                    {r.type.split('_').map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(' ')} Checkpoint
                   </h5>
                   <p style={{ margin: 0, fontSize: '11px', color: '#64748b' }}>
                     Activity Date: {new Date(r.activityDate).toLocaleDateString()}
@@ -334,6 +400,7 @@ export default function ProjectDashboardPage() {
                     borderTop: '1px solid #f1f5f9',
                     display: 'flex',
                     gap: '8px',
+                    alignItems: 'center',
                   }}
                 >
                   {!r.isCompliant ? (
@@ -345,26 +412,39 @@ export default function ProjectDashboardPage() {
                           background: '#1e3a8a',
                           color: '#ffffff',
                           border: 'none',
-                          padding: '6px 0',
-                          borderRadius: '4px',
+                          padding: '8px 0',
+                          borderRadius: '6px',
                           cursor: 'pointer',
                           fontSize: '11px',
                           fontWeight: 600,
+                          transition: 'background-color 0.15s ease',
                         }}
+                        onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
+                        onMouseOut={(e) => (e.currentTarget.style.backgroundColor = '#1e3a8a')}
                       >
                         Mark Compliant
                       </button>
                       <Link
-                        to="/ai-workspace/upload"
+                        to={`/ai-workspace/upload?projectId=${project.id}&type=${r.type}`}
                         style={{
                           textDecoration: 'none',
                           border: '1px solid #cbd5e1',
+                          background: '#ffffff',
                           color: '#475569',
-                          padding: '5px 8px',
-                          borderRadius: '4px',
+                          padding: '7px 12px',
+                          borderRadius: '6px',
                           fontSize: '11px',
                           fontWeight: 600,
                           textAlign: 'center',
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.background = '#f8fafc';
+                          e.currentTarget.style.borderColor = '#94a3b8';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.background = '#ffffff';
+                          e.currentTarget.style.borderColor = '#cbd5e1';
                         }}
                       >
                         Upload
@@ -373,15 +453,19 @@ export default function ProjectDashboardPage() {
                   ) : (
                     <span
                       style={{
-                        fontSize: '12px',
-                        color: '#10b981',
+                        fontSize: '11px',
+                        color: '#03543f',
+                        background: '#bcf0da',
+                        padding: '4px 10px',
+                        borderRadius: '6px',
                         fontWeight: 600,
-                        display: 'flex',
+                        display: 'inline-flex',
                         alignItems: 'center',
                         gap: '4px',
+                        border: '1px solid #84e1bc',
                       }}
                     >
-                      ✓ Verified
+                      ✓ Verified Checkpoint
                     </span>
                   )}
                 </div>

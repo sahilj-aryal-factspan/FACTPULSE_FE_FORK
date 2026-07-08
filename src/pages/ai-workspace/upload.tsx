@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { useDataStore } from '../../store/data-store';
 
 export default function ArtifactUploadPage() {
   const { projects, uploadArtifact } = useDataStore();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
-  const [selectedProjectId, setSelectedProjectId] = useState(projects[0]?.id || '');
+  const [selectedProjectId, setSelectedProjectId] = useState(
+    searchParams.get('projectId') || projects[0]?.id || ''
+  );
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -46,43 +49,44 @@ export default function ArtifactUploadPage() {
     }
   };
 
-  const handleUploadSubmit = (e: React.FormEvent) => {
+  const handleUploadSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (files.length === 0 || !selectedProjectId) return;
 
     setUploading(true);
+    setProgress(15);
 
-    // Simulate upload progress interval
-    let currentProgress = 0;
-    const interval = setInterval(() => {
-      currentProgress += 10;
-      setProgress(currentProgress);
+    try {
+      // Process uploads sequentially or concurrently
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        let type: 'PDF' | 'PPT' | 'DOC' = 'PDF';
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (ext === 'pptx' || ext === 'ppt') type = 'PPT';
+        else if (ext === 'docx' || ext === 'doc') type = 'DOC';
 
-      if (currentProgress >= 100) {
-        clearInterval(interval);
+        await uploadArtifact(
+          selectedProjectId,
+          file,
+          type,
+          `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+        );
 
-        // Write each file to the store
-        files.forEach((file) => {
-          let type: 'PDF' | 'PPT' | 'DOC' = 'PDF';
-          const ext = file.name.split('.').pop()?.toLowerCase();
-          if (ext === 'pptx' || ext === 'ppt') type = 'PPT';
-          else if (ext === 'docx' || ext === 'doc') type = 'DOC';
-
-          uploadArtifact(selectedProjectId, {
-            name: file.name,
-            type,
-            size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-          });
-        });
-
-        setUploading(false);
-        setFiles([]);
-        setProgress(0);
-
-        // Redirect to AI processing page
-        navigate('/ai-workspace/processing');
+        setProgress(Math.round(((i + 1) / files.length) * 80) + 15);
       }
-    }, 250);
+
+      setProgress(100);
+      setUploading(false);
+      setFiles([]);
+      setProgress(0);
+
+      // Redirect to AI processing page
+      navigate('/ai-workspace/processing');
+    } catch (err) {
+      console.error(err);
+      setUploading(false);
+      alert('Error uploading files: ' + (err.message || err));
+    }
   };
 
   return (

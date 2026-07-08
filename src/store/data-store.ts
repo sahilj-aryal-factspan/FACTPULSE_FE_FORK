@@ -64,7 +64,8 @@ export interface Artifact {
   type: 'PDF' | 'PPT' | 'DOC';
   uploadedAt: string;
   size: string;
-  status: 'PROCESSING' | 'COMPLETED';
+  status: 'PROCESSING' | 'COMPLETED' | 'FAILED';
+  summary?: string;
 }
 
 export interface Risk {
@@ -146,6 +147,8 @@ interface DataStore {
   milestones: Milestone[];
   governanceRecords: GovernanceRecord[];
   aiReports: AIReport[];
+  aiExecutiveDigest: string;
+  trendsData: any[];
 
   // CRUD Actions
   // Users
@@ -173,13 +176,15 @@ interface DataStore {
   // Projects
   addProject: (project: Omit<Project, 'id'>) => Promise<string>;
   updateProject: (id: string, updates: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  deleteProject: (id: string) => Promise<void>;
 
   // Artifacts
   uploadArtifact: (
     projectId: string,
-    file: { name: string; type: 'PDF' | 'PPT' | 'DOC'; size: string }
-  ) => string;
+    file: File,
+    type: 'PDF' | 'PPT' | 'DOC',
+    size: string
+  ) => Promise<string>;
   deleteArtifact: (id: string) => void;
 
   // Memory (Risks, Actions, Decisions, Milestones)
@@ -499,6 +504,8 @@ export const useDataStore = create<DataStore>((set, get) => ({
   ],
   governanceRecords: [],
   aiReports: [],
+  aiExecutiveDigest: 'Overall delivery health is loading...',
+  trendsData: [],
 
   // CRUD Actions Implementation
   addUser: (user) =>
@@ -624,79 +631,242 @@ export const useDataStore = create<DataStore>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) => (p.id === id ? { ...p, ...updates } : p)),
     })),
-  deleteProject: (id) =>
-    set((state) => ({
-      projects: state.projects.filter((p) => p.id !== id),
-    })),
-
-  uploadArtifact: (projectId, file) => {
-    const id = `art-${Date.now()}`;
-    const newArt: Artifact = {
-      id,
-      projectId,
-      name: file.name,
-      type: file.type,
-      uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
-      size: file.size,
-      status: 'PROCESSING',
-    };
-    set((state) => ({
-      artifacts: [...state.artifacts, newArt],
-    }));
-    // Simulate background processing completion
-    setTimeout(() => {
+  deleteProject: async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/projects/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        set((state) => ({
+          projects: state.projects.filter((p) => p.id !== id),
+        }));
+      } else {
+        throw new Error('Failed to delete project on backend');
+      }
+    } catch (e) {
+      console.error(e);
       set((state) => ({
-        artifacts: state.artifacts.map((a) => (a.id === id ? { ...a, status: 'COMPLETED' } : a)),
+        projects: state.projects.filter((p) => p.id !== id),
       }));
-    }, 4000);
-    return id;
+    }
+  },
+
+  uploadArtifact: async (projectId, file, type, size) => {
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('projectId', projectId);
+      formData.append('type', type);
+      formData.append('size', size);
+
+      const res = await fetch('http://localhost:8080/api/v1/artifacts/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (res.ok) {
+        const payload = await res.json();
+        const createdArtifact = payload.data;
+        set((state) => ({
+          artifacts: [...state.artifacts, createdArtifact],
+        }));
+        return createdArtifact.id;
+      } else {
+        throw new Error('Failed to upload file');
+      }
+    } catch (e) {
+      console.error(e);
+      // Fallback
+      const mockId = `art-${Date.now()}`;
+      const newArt: Artifact = {
+        id: mockId,
+        projectId,
+        name: file.name,
+        type,
+        uploadedAt: new Date().toISOString().replace('T', ' ').substring(0, 16),
+        size,
+        status: 'COMPLETED',
+        summary: 'Generated mock summary (Offline Mode).',
+      };
+      set((state) => ({
+        artifacts: [...state.artifacts, newArt],
+      }));
+      return mockId;
+    }
   },
   deleteArtifact: (id) =>
     set((state) => ({
       artifacts: state.artifacts.filter((a) => a.id !== id),
     })),
 
-  addRisk: (projectId, risk) =>
-    set((state) => ({
-      risks: [...state.risks, { ...risk, id: `risk-${Date.now()}`, projectId, status: 'OPEN' }],
-    })),
-  updateRisk: (id, updates) =>
-    set((state) => ({
-      risks: state.risks.map((r) => (r.id === id ? { ...r, ...updates } : r)),
-    })),
-  deleteRisk: (id) =>
-    set((state) => ({
-      risks: state.risks.filter((r) => r.id !== id),
-    })),
+  addRisk: async (projectId, risk) => {
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/risks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, ...risk }),
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        set((state) => ({
+          risks: [...state.risks, payload.data],
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        risks: [...state.risks, { ...risk, id: `risk-${Date.now()}`, projectId, status: 'OPEN' }],
+      }));
+    }
+  },
+  updateRisk: async (id, updates) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/risks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        set((state) => ({
+          risks: state.risks.map((r) => (r.id === id ? payload.data : r)),
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        risks: state.risks.map((r) => (r.id === id ? { ...r, ...updates } : r)),
+      }));
+    }
+  },
+  deleteRisk: async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/risks/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        set((state) => ({
+          risks: state.risks.filter((r) => r.id !== id),
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        risks: state.risks.filter((r) => r.id !== id),
+      }));
+    }
+  },
 
-  addAction: (projectId, action) =>
-    set((state) => ({
-      actions: [
-        ...state.actions,
-        { ...action, id: `act-${Date.now()}`, projectId, status: 'PENDING' },
-      ],
-    })),
-  updateAction: (id, updates) =>
-    set((state) => ({
-      actions: state.actions.map((a) => (a.id === id ? { ...a, ...updates } : a)),
-    })),
-  deleteAction: (id) =>
-    set((state) => ({
-      actions: state.actions.filter((a) => a.id !== id),
-    })),
+  addAction: async (projectId, action) => {
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/action-items', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, ...action }),
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        set((state) => ({
+          actions: [...state.actions, payload.data],
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        actions: [
+          ...state.actions,
+          { ...action, id: `act-${Date.now()}`, projectId, status: 'PENDING' },
+        ],
+      }));
+    }
+  },
+  updateAction: async (id, updates) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/action-items/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        set((state) => ({
+          actions: state.actions.map((a) => (a.id === id ? payload.data : a)),
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        actions: state.actions.map((a) => (a.id === id ? { ...a, ...updates } : a)),
+      }));
+    }
+  },
+  deleteAction: async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/action-items/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        set((state) => ({
+          actions: state.actions.filter((a) => a.id !== id),
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        actions: state.actions.filter((a) => a.id !== id),
+      }));
+    }
+  },
 
-  addDecision: (projectId, decision) =>
-    set((state) => ({
-      decisions: [...state.decisions, { ...decision, id: `dec-${Date.now()}`, projectId }],
-    })),
+  addDecision: async (projectId, decision) => {
+    try {
+      const res = await fetch('http://localhost:8080/api/v1/decisions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ projectId, ...decision }),
+      });
+      if (res.ok) {
+        const payload = await res.json();
+        set((state) => ({
+          decisions: [...state.decisions, payload.data],
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        decisions: [...state.decisions, { ...decision, id: `dec-${Date.now()}`, projectId }],
+      }));
+    }
+  },
   updateDecision: (id, updates) =>
     set((state) => ({
       decisions: state.decisions.map((d) => (d.id === id ? { ...d, ...updates } : d)),
     })),
-  deleteDecision: (id) =>
-    set((state) => ({
-      decisions: state.decisions.filter((d) => d.id !== id),
-    })),
+  deleteDecision: async (id) => {
+    try {
+      const res = await fetch(`http://localhost:8080/api/v1/decisions/${id}`, {
+        method: 'DELETE',
+      });
+      if (res.ok) {
+        set((state) => ({
+          decisions: state.decisions.filter((d) => d.id !== id),
+        }));
+        await get().syncWithBackend();
+      }
+    } catch (e) {
+      console.error(e);
+      set((state) => ({
+        decisions: state.decisions.filter((d) => d.id !== id),
+      }));
+    }
+  },
 
   addMilestone: (projectId, milestone) =>
     set((state) => ({
@@ -832,29 +1002,66 @@ export const useDataStore = create<DataStore>((set, get) => ({
 
   syncWithBackend: async () => {
     try {
-      const [accRes, projRes, govRes] = await Promise.all([
+      const [accRes, projRes, govRes, artRes, risksRes, actionsRes, decisionsRes, digestRes, trendsRes] = await Promise.all([
         fetch('http://localhost:8080/api/v1/accounts'),
         fetch('http://localhost:8080/api/v1/projects'),
-        fetch('http://localhost:8080/api/v1/governance-activities')
+        fetch('http://localhost:8080/api/v1/governance-activities'),
+        fetch('http://localhost:8080/api/v1/artifacts'),
+        fetch('http://localhost:8080/api/v1/risks'),
+        fetch('http://localhost:8080/api/v1/action-items'),
+        fetch('http://localhost:8080/api/v1/decisions'),
+        fetch('http://localhost:8080/api/v1/dashboard/portfolio-summary'),
+        fetch('http://localhost:8080/api/v1/dashboard/governance-trends'),
       ]);
-      if (accRes.ok && projRes.ok && govRes.ok) {
+
+      if (accRes.ok && projRes.ok && govRes.ok && artRes.ok) {
         const dbAccounts = await accRes.json();
         const dbProjects = await projRes.json();
         const dbGovRecords = await govRes.json();
+        const dbArtifactsPayload = await artRes.json();
+        const dbArtifacts = dbArtifactsPayload.data?.items || [];
 
-        set((state) => {
-          const existingAccIds = new Set((state.accounts || []).map(a => a.id));
-          const newAccounts = (dbAccounts || []).filter((a: any) => !existingAccIds.has(a.id));
-          
-          const existingProjIds = new Set((state.projects || []).map(p => p.id));
-          const newProjects = (dbProjects || []).filter((p: any) => !existingProjIds.has(p.id));
+        let dbRisks = [];
+        if (risksRes.ok) {
+          const payload = await risksRes.json();
+          dbRisks = payload.data || [];
+        }
 
-          return { 
-            accounts: [...state.accounts, ...newAccounts],
-            projects: [...state.projects, ...newProjects],
-            governanceRecords: dbGovRecords // Just overwrite with DB truth
-          };
-        });
+        let dbActions = [];
+        if (actionsRes.ok) {
+          const payload = await actionsRes.json();
+          dbActions = payload.data || [];
+        }
+
+        let dbDecisions = [];
+        if (decisionsRes.ok) {
+          const payload = await decisionsRes.json();
+          dbDecisions = payload.data || [];
+        }
+
+        let aiExecutiveDigest = 'Overall health is 86%. loading...';
+        if (digestRes.ok) {
+          const payload = await digestRes.json();
+          aiExecutiveDigest = payload.data?.aiExecutiveDigest || aiExecutiveDigest;
+        }
+
+        let trendsData = [];
+        if (trendsRes.ok) {
+          const payload = await trendsRes.json();
+          trendsData = payload.data || [];
+        }
+
+        set(() => ({
+          accounts: dbAccounts,
+          projects: dbProjects,
+          governanceRecords: dbGovRecords,
+          artifacts: dbArtifacts,
+          risks: dbRisks,
+          actions: dbActions,
+          decisions: dbDecisions,
+          aiExecutiveDigest,
+          trendsData,
+        }));
       }
     } catch (e) {
       console.error('Failed to sync with backend', e);

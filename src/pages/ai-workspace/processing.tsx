@@ -1,11 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useDataStore } from '../../store/data-store';
 
 export default function AIProcessingPage() {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
+  const { syncWithBackend } = useDataStore();
 
   useEffect(() => {
+    // Pull the parsed risks, action items, decisions, and recalculated health scores from the backend
+    syncWithBackend();
+
     const timer1 = setTimeout(() => setStep(2), 1500);
     const timer2 = setTimeout(() => setStep(3), 3000);
     const timer3 = setTimeout(() => {
@@ -18,7 +23,7 @@ export default function AIProcessingPage() {
       clearTimeout(timer2);
       clearTimeout(timer3);
     };
-  }, [navigate]);
+  }, [navigate, syncWithBackend]);
 
   return (
     <div

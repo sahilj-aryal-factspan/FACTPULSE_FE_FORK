@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useDataStore } from '../../store/data-store';
 
 export default function PortfolioPage() {
-  const { accounts, projects } = useDataStore();
+  const { accounts, projects, aiExecutiveDigest } = useDataStore();
 
   const totalAccounts = accounts.length;
   const criticalAccountsCount = accounts.filter((a) => a.ragStatus === 'RED').length;
@@ -69,15 +69,10 @@ export default function PortfolioPage() {
           >
             ⚡ AI Executive Digest
           </span>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>Generated 2 hours ago</span>
+          <span style={{ fontSize: '12px', color: '#64748b' }}>Generated dynamically</span>
         </div>
-        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155' }}>
-          Overall delivery health is at <strong>{avgHealthScore}% Health Score</strong>.
-          Baptist Health remains a
-          <span style={{ color: '#ef4444', fontWeight: 600 }}> HIGH RISK (RED)</span> account due to
-          delayed sandboxes on EHR API integrations. Macy's leads compliance at 92% with active
-          reviews up to date. Suggest scheduling a stakeholder touchpoint with CVS Retail Pharmacy
-          lead.
+        <p style={{ margin: 0, fontSize: '14px', lineHeight: '1.6', color: '#334155', fontWeight: 500 }}>
+          {aiExecutiveDigest}
         </p>
       </div>
 
