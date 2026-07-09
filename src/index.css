@@ -129,3 +129,104 @@
     @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-blue-50 dark:bg-blue-950/20 text-secondary border border-blue-200 dark:border-blue-900/30;
   }
 }
+
+/* FactsAi assistant markdown rendering */
+.factsai-markdown {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #1e293b;
+}
+
+.factsai-markdown p {
+  margin: 0.5em 0;
+}
+
+.factsai-markdown p:first-child {
+  margin-top: 0;
+}
+
+.factsai-markdown p:last-child {
+  margin-bottom: 0;
+}
+
+.factsai-markdown ul,
+.factsai-markdown ol {
+  margin: 0.5em 0;
+  padding-left: 1.25em;
+}
+
+.factsai-markdown li {
+  margin: 0.25em 0;
+}
+
+.factsai-markdown h1,
+.factsai-markdown h2,
+.factsai-markdown h3 {
+  color: #1e3a8a;
+  margin: 0.75em 0 0.35em;
+  font-weight: 700;
+}
+
+.factsai-markdown h1 {
+  font-size: 1.15em;
+}
+
+.factsai-markdown h2 {
+  font-size: 1.05em;
+}
+
+.factsai-markdown h3 {
+  font-size: 1em;
+}
+
+.factsai-markdown code {
+  background: #f1f5f9;
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.factsai-markdown pre {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  overflow-x: auto;
+  margin: 0.5em 0;
+}
+
+.factsai-markdown pre code {
+  background: transparent;
+  padding: 0;
+}
+
+.factsai-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 0.5em 0;
+  font-size: 13px;
+}
+
+.factsai-markdown th,
+.factsai-markdown td {
+  border: 1px solid #e2e8f0;
+  padding: 6px 10px;
+  text-align: left;
+}
+
+.factsai-markdown th {
+  background: #f8fafc;
+  color: #1e3a8a;
+  font-weight: 600;
+}
+
+.factsai-markdown strong {
+  color: #1e3a8a;
+}
+
+.factsai-markdown blockquote {
+  border-left: 3px solid #d97706;
+  margin: 0.5em 0;
+  padding-left: 12px;
+  color: #64748b;
+}

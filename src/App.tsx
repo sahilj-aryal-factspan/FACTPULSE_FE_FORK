@@ -50,7 +50,8 @@ function App() {
   useEffect(() => {
     const initAuth = async () => {
       await checkMe();
-      await syncWithBackend();
+      // Don't block the UI if background sync is slow — pages can render immediately.
+      syncWithBackend().catch((e) => console.error('Background sync failed', e));
       setInitializing(false);
     };
     initAuth();

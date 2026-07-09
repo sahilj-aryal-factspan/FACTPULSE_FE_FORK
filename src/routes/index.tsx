@@ -18,6 +18,7 @@ import {
   ArtifactUploadPage,
   AIProcessingPage,
   AIWorkspacePage,
+  FactsAiPage,
   UserManagementPage,
 } from './Lazyrout';
 
@@ -71,6 +72,7 @@ function Layout({ children }: { children: React.ReactNode }) {
     if (path === '/projects' && isProjectRoute) return true;
     if (path === '/governance' && location.pathname.startsWith('/governance')) return true;
     if (path === '/ai-workspace' && location.pathname.startsWith('/ai-workspace')) return true;
+    if (path === '/facts-ai' && location.pathname.startsWith('/facts-ai')) return true;
     if (path === '/admin' && location.pathname.startsWith('/admin')) return true;
     return false;
   };
@@ -148,6 +150,11 @@ function Layout({ children }: { children: React.ReactNode }) {
               {(!user.tabsToShow || user.tabsToShow.includes('/ai-workspace')) && (
                 <Link to="/ai-workspace" style={navItemStyle('/ai-workspace')}>
                   AI Workspace
+                </Link>
+              )}
+              {(!user.tabsToShow || user.tabsToShow.includes('/facts-ai')) && (
+                <Link to="/facts-ai" style={navItemStyle('/facts-ai')}>
+                  FactsAi
                 </Link>
               )}
               {user.role === 'PLATFORM_ADMIN' &&
@@ -465,6 +472,28 @@ export default function AppRoutes() {
             <ProtectedRoute allowedRoles={['PLATFORM_ADMIN', 'ACCOUNT_LEAD', 'DELIVERY_LEAD']}>
               <Layout>
                 <AIProcessingPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* FactsAi Chat */}
+        <Route
+          path="/facts-ai"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FactsAiPage />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/facts-ai/:conversationId"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <FactsAiPage />
               </Layout>
             </ProtectedRoute>
           }

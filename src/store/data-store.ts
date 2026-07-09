@@ -1005,9 +1005,11 @@ export const useDataStore = create<DataStore>((set, get) => ({
 
   syncWithBackend: async () => {
     try {
-      const fetchHelper = async (url: string) => {
+      const fetchHelper = async (url: string, timeoutMs = 15000) => {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), timeoutMs);
         try {
-          const res = await fetch(url);
+          const res = await fetch(url, { signal: controller.signal });
           if (res.ok) {
             return await res.json();
           }
@@ -1016,6 +1018,8 @@ export const useDataStore = create<DataStore>((set, get) => ({
         } catch (e) {
           console.warn(`Backend connection failed for URL: ${url}`, e);
           return null;
+        } finally {
+          clearTimeout(timer);
         }
       };
 
