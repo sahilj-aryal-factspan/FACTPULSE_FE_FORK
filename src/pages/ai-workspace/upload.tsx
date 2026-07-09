@@ -10,6 +10,9 @@ export default function ArtifactUploadPage() {
   const [selectedProjectId, setSelectedProjectId] = useState(
     searchParams.get('projectId') || projects[0]?.id || ''
   );
+  const [reportingDate, setReportingDate] = useState(
+    new Date().toISOString().substring(0, 10)
+  );
   const [dragActive, setDragActive] = useState(false);
   const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
@@ -32,8 +35,8 @@ export default function ArtifactUploadPage() {
 
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFiles = Array.from(e.dataTransfer.files).filter((file) => {
-        const ext = file.name.split('.').pop()?.toUpperCase();
-        return ext === 'PDF' || ext === 'PPTX' || ext === 'PPT' || ext === 'DOC' || ext === 'DOCX';
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        return ext === 'pdf' || ext === 'pptx' || ext === 'ppt' || ext === 'doc' || ext === 'docx';
       });
       setFiles((prev) => [...prev, ...droppedFiles]);
     }
@@ -42,8 +45,8 @@ export default function ArtifactUploadPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const selectedFiles = Array.from(e.target.files).filter((file) => {
-        const ext = file.name.split('.').pop()?.toUpperCase();
-        return ext === 'PDF' || ext === 'PPTX' || ext === 'PPT' || ext === 'DOC' || ext === 'DOCX';
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        return ext === 'pdf' || ext === 'pptx' || ext === 'ppt' || ext === 'doc' || ext === 'docx';
       });
       setFiles((prev) => [...prev, ...selectedFiles]);
     }
@@ -69,7 +72,8 @@ export default function ArtifactUploadPage() {
           selectedProjectId,
           file,
           type,
-          `${(file.size / (1024 * 1024)).toFixed(1)} MB`
+          `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
+          reportingDate
         );
 
         setProgress(Math.round(((i + 1) / files.length) * 80) + 15);
@@ -167,6 +171,39 @@ export default function ArtifactUploadPage() {
                 </option>
               ))}
             </select>
+          </div>
+
+          {/* Reporting Period / Date */}
+          <div style={{ marginBottom: '24px' }}>
+            <label
+              style={{
+                display: 'block',
+                marginBottom: '6px',
+                fontWeight: 600,
+                fontSize: '13px',
+                color: '#334155',
+              }}
+            >
+              Reporting Period / Timeline Date *
+            </label>
+            <input
+              type="date"
+              required
+              style={{
+                width: '100%',
+                padding: '10px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontSize: '14px',
+                boxSizing: 'border-box',
+              }}
+              value={reportingDate}
+              onChange={(e) => setReportingDate(e.target.value)}
+              disabled={uploading}
+            />
+            <p style={{ margin: '6px 0 0 0', fontSize: '11px', color: '#64748b' }}>
+              Select the timeline date (e.g. week commencing Monday) that this review deck or document represents.
+            </p>
           </div>
 
           {/* Drag & Drop Area */}

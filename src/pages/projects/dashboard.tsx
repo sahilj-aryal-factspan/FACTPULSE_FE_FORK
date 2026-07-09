@@ -30,10 +30,63 @@ export default function ProjectDashboardPage() {
   const account = (accounts || []).find((a) => a.id === accountId);
   const project = (projects || []).find((p) => p.id === projectId);
 
+  const [timeFilter, setTimeFilter] = useState<'ALL' | 'WEEK' | 'PREV_WEEK' | 'MONTH' | 'CUSTOM'>('ALL');
+  const [customStart, setCustomStart] = useState('');
+  const [customEnd, setCustomEnd] = useState('');
+
+  const getFilteredItems = <T extends { timelineDate?: string; createdAt?: string }>(items: T[]) => {
+    if (timeFilter === 'ALL') return items;
+
+    let start = new Date(0);
+    let end = new Date(32503680000000); // Year 3000
+
+    const now = new Date();
+    // Monday of current week:
+    const day = now.getDay();
+    const mondayDiff = day === 0 ? -6 : 1 - day;
+
+    if (timeFilter === 'WEEK') {
+      const monday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayDiff, 0, 0, 0, 0);
+      start = monday;
+
+      const sunday = new Date(monday);
+      sunday.setDate(monday.getDate() + 6);
+      sunday.setHours(23, 59, 59, 999);
+      end = sunday;
+    } else if (timeFilter === 'PREV_WEEK') {
+      const prevMonday = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayDiff - 7, 0, 0, 0, 0);
+      start = prevMonday;
+
+      const prevSunday = new Date(prevMonday);
+      prevSunday.setDate(prevMonday.getDate() + 6);
+      prevSunday.setHours(23, 59, 59, 999);
+      end = prevSunday;
+    } else if (timeFilter === 'MONTH') {
+      start = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+      end = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    } else if (timeFilter === 'CUSTOM') {
+      if (customStart) {
+        start = new Date(customStart);
+        start.setHours(0, 0, 0, 0);
+      }
+      if (customEnd) {
+        end = new Date(customEnd);
+        end.setHours(23, 59, 59, 999);
+      }
+    }
+
+    return items.filter((item) => {
+      const dateStr = item.timelineDate || item.createdAt;
+      if (!dateStr) return false;
+      const date = new Date(dateStr);
+      return date >= start && date <= end;
+    });
+  };
+
   // Filter project memory
-  const projectRisks = (risks || []).filter((r) => r.projectId === projectId);
-  const projectActions = (actions || []).filter((a) => a.projectId === projectId);
-  const projectDecisions = (decisions || []).filter((d) => d.projectId === projectId);
+  const projectRisks = getFilteredItems((risks || []).filter((r) => r.projectId === projectId));
+  const projectActions = getFilteredItems((actions || []).filter((a) => a.projectId === projectId));
+  const projectDecisions = getFilteredItems((decisions || []).filter((d) => d.projectId === projectId));
   const projectMilestones = (milestones || []).filter((m) => m.projectId === projectId);
   const projectGovRecords = (governanceRecords || []).filter((r) => r.projectId === projectId);
 
@@ -260,6 +313,98 @@ export default function ProjectDashboardPage() {
               style={{ width: `${project.staffingHealth ?? 0}%`, height: '100%', background: '#1e3a8a' }}
             ></div>
           </div>
+        </div>
+      </div>
+
+      {/* Timeline Filter Component */}
+      <div
+        style={{
+          background: '#ffffff',
+          borderRadius: '12px',
+          border: '1px solid #e2e8f0',
+          padding: '16px 24px',
+          marginBottom: '32px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
+          flexWrap: 'wrap',
+          gap: '16px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span style={{ fontSize: '18px' }}>📅</span>
+          <div>
+            <h4 style={{ margin: 0, color: '#1e293b', fontSize: '14px', fontWeight: 700 }}>
+              Timeline Filter
+            </h4>
+            <p style={{ margin: '2px 0 0 0', color: '#64748b', fontSize: '11px' }}>
+              Filter issues (Risks, Actions, Decisions) by reporting period
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', background: '#f1f5f9', padding: '4px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            {(
+              [
+                { key: 'ALL', label: 'All Time' },
+                { key: 'WEEK', label: 'This Week' },
+                { key: 'PREV_WEEK', label: 'Previous Week' },
+                { key: 'MONTH', label: 'This Month' },
+                { key: 'CUSTOM', label: 'Custom Range' },
+              ] as const
+            ).map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setTimeFilter(opt.key)}
+                style={{
+                  background: timeFilter === opt.key ? '#ffffff' : 'transparent',
+                  color: timeFilter === opt.key ? '#1e3a8a' : '#475569',
+                  border: 'none',
+                  padding: '6px 12px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: timeFilter === opt.key ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {timeFilter === 'CUSTOM' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <input
+                type="date"
+                value={customStart}
+                onChange={(e) => setCustomStart(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#334155',
+                }}
+              />
+              <span style={{ fontSize: '12px', color: '#64748b' }}>to</span>
+              <input
+                type="date"
+                value={customEnd}
+                onChange={(e) => setCustomEnd(e.target.value)}
+                style={{
+                  padding: '6px 10px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  color: '#334155',
+                }}
+              />
+            </div>
+          )}
         </div>
       </div>
 

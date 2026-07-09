@@ -178,12 +178,12 @@ interface DataStore {
   updateProject: (id: string, updates: Partial<Project>) => void;
   deleteProject: (id: string) => Promise<void>;
 
-  // Artifacts
   uploadArtifact: (
     projectId: string,
     file: File,
     type: 'PDF' | 'PPT' | 'DOC',
-    size: string
+    size: string,
+    reportingDate?: string
   ) => Promise<string>;
   deleteArtifact: (id: string) => void;
 
@@ -651,13 +651,16 @@ export const useDataStore = create<DataStore>((set, get) => ({
     }
   },
 
-  uploadArtifact: async (projectId, file, type, size) => {
+  uploadArtifact: async (projectId, file, type, size, reportingDate) => {
     try {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('projectId', projectId);
       formData.append('type', type);
       formData.append('size', size);
+      if (reportingDate) {
+        formData.append('reportingDate', reportingDate);
+      }
 
       const res = await fetch('http://localhost:8080/api/v1/artifacts/upload', {
         method: 'POST',

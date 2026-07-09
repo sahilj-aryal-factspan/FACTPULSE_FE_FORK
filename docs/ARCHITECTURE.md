@@ -73,10 +73,10 @@ Routing maps directly to the navigation requirements of the Executive Command Ce
 | `/` | Landing Page | Public | Welcome screen & general introduction. |
 | `/login` | Login Page | Public | Google Workspace SSO simulation. |
 | `/portfolio` | Portfolio Dashboard | Executive, Account Lead | High-level account cards, portfolio RAG health tracker, compliance trends. |
-| `/accounts/:accountId` | Account Dashboard | Account Lead | Buying centers, overall project RAG states, stakeholder sentiment scores, and automated reports. |
+| `/accounts/:accountId` | Account Dashboard | Account Lead | Buying centers, interactive status Heatmap Summary Bar, staffing score progress bars, overall project RAG states, stakeholder sentiment scores, and automated reports. |
 | `/buying-centers/:centerId` | Buying Center Dashboard | Account Lead | Stakeholder hierarchy charts, connect frequency tracker, and contact cards. |
-| `/accounts/:accountId/projects/:projectId` | Project Dashboard | Delivery Lead | Detailed project governance activities, risks lists, action items, and upload widget. |
-| `/ai-workspace` | AI Governance Workspace | Delivery Lead, Account Lead | Upload artifacts, select draft types (Weekly Notes, WBR, digest), review drafts, approve, and export. |
+| `/accounts/:accountId/projects/:projectId` | Project Dashboard | Delivery Lead | Detailed project governance check-gate activities, risks lists, action items, and upload widget with dynamic RAG recalculation. |
+| `/ai-workspace` | AI Governance Workspace | Delivery Lead, Account Lead | Upload artifacts, select draft types (Weekly Notes, WBR, digest), select timeline ranges, view styled HTML drafts, switch preview/code tabs, download PDF, approve, and export. |
 
 ---
 

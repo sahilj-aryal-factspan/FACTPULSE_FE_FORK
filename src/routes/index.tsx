@@ -61,9 +61,14 @@ function Layout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
 
   const isLinkActive = (path: string) => {
+    const isProjectRoute = location.pathname.startsWith('/projects') || location.pathname.includes('/projects');
+    const isAccountOrBCRoute =
+      (location.pathname.startsWith('/accounts') && !isProjectRoute) ||
+      location.pathname.startsWith('/buying-centers');
+
     if (path === '/portfolio' && location.pathname === '/portfolio') return true;
-    if (path === '/accounts' && location.pathname.startsWith('/accounts')) return true;
-    if (path === '/projects' && location.pathname.startsWith('/projects')) return true;
+    if (path === '/accounts' && isAccountOrBCRoute) return true;
+    if (path === '/projects' && isProjectRoute) return true;
     if (path === '/governance' && location.pathname.startsWith('/governance')) return true;
     if (path === '/ai-workspace' && location.pathname.startsWith('/ai-workspace')) return true;
     if (path === '/admin' && location.pathname.startsWith('/admin')) return true;

@@ -11,23 +11,19 @@ export default function AIWorkspacePage() {
     'WEEKLY_NOTES' | 'WBR' | 'GOVERNANCE_SUMMARY' | 'ACCOUNT_DIGEST'
   >('WEEKLY_NOTES');
 
-  // Selected source files checkboxes
-  const projectArtifacts = artifacts.filter((a) => a.projectId === selectedProjectId);
-  const [selectedArtifacts, setSelectedArtifacts] = useState<string[]>([]);
+  // Selected timeline bounds for generation
+  const [timeFilter, setTimeFilter] = useState<'ALL' | 'WEEK' | 'PREV_WEEK' | 'MONTH' | 'CUSTOM'>('ALL');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   // Editor states
   const [activeReportId, setActiveReportId] = useState<string | null>(null);
   const [editorText, setEditorText] = useState('');
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editorTab, setEditorTab] = useState<'PREVIEW' | 'CODE'>('PREVIEW');
 
   const activeReport = aiReports.find((r) => r.id === activeReportId);
-
-  const toggleArtifact = (id: string) => {
-    setSelectedArtifacts((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
-  };
 
   const handleGenerate = async () => {
     if (!selectedProjectId) return;
@@ -40,7 +36,9 @@ export default function AIWorkspacePage() {
         body: JSON.stringify({
           projectId: selectedProjectId,
           type: reportType,
-          artifactIds: selectedArtifacts,
+          timeFilter,
+          startDate: timeFilter === 'CUSTOM' ? startDate : undefined,
+          endDate: timeFilter === 'CUSTOM' ? endDate : undefined,
         }),
       });
 
@@ -79,6 +77,59 @@ export default function AIWorkspacePage() {
 
   const handleExportGmail = () => {
     alert('Draft email created successfully in Gmail drafts via MCP connector.');
+  };
+
+  const handleDownloadPDF = () => {
+    if (!activeReportId) return;
+    const printFrame = document.createElement('iframe');
+    printFrame.style.position = 'fixed';
+    printFrame.style.right = '0';
+    printFrame.style.bottom = '0';
+    printFrame.style.width = '0';
+    printFrame.style.height = '0';
+    printFrame.style.border = '0';
+    document.body.appendChild(printFrame);
+
+    const doc = printFrame.contentWindow?.document;
+    if (!doc) return;
+    doc.open();
+    doc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${activeReport?.type || 'Report'}_Draft</title>
+          <style>
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+              margin: 0;
+              padding: 40px;
+              background-color: #ffffff;
+              color: #1e293b;
+            }
+            @media print {
+              body {
+                padding: 0;
+              }
+              .no-print {
+                display: none;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          ${editorText}
+        </body>
+      </html>
+    `);
+    doc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+      setTimeout(() => {
+        document.body.removeChild(printFrame);
+      }, 1000);
+    }, 500);
   };
 
   return (
@@ -171,7 +222,6 @@ export default function AIWorkspacePage() {
               value={selectedProjectId}
               onChange={(e) => {
                 setSelectedProjectId(e.target.value);
-                setSelectedArtifacts([]);
               }}
             >
               {projects.map((p) => (
@@ -228,7 +278,7 @@ export default function AIWorkspacePage() {
             </div>
           </div>
 
-          {/* Source Artifacts Checkbox List */}
+          {/* Target Timeline / Date Range */}
           <div style={{ marginBottom: '24px', borderTop: '1px solid #f1f5f9', paddingTop: '16px' }}>
             <label
               style={{
@@ -239,35 +289,62 @@ export default function AIWorkspacePage() {
                 color: '#334155',
               }}
             >
-              Include Memory Sources ({projectArtifacts.length})
+              Summary Target Period
             </label>
-            {projectArtifacts.length > 0 ? (
+            <select
+              style={{
+                width: '100%',
+                padding: '8px 12px',
+                border: '1px solid #cbd5e1',
+                borderRadius: '6px',
+                fontSize: '13px',
+                boxSizing: 'border-box',
+                marginBottom: '12px',
+              }}
+              value={timeFilter}
+              onChange={(e) => setTimeFilter(e.target.value as any)}
+            >
+              <option value="ALL">All Time (Whole Project)</option>
+              <option value="WEEK">This Week</option>
+              <option value="PREV_WEEK">Previous Week</option>
+              <option value="MONTH">This Month</option>
+              <option value="CUSTOM">Custom Date Range</option>
+            </select>
+
+            {timeFilter === 'CUSTOM' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {projectArtifacts.map((a) => (
-                  <label
-                    key={a.id}
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>Start Date</label>
+                  <input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
                     style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
                       fontSize: '12px',
-                      color: '#475569',
-                      cursor: 'pointer',
+                      boxSizing: 'border-box',
                     }}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selectedArtifacts.includes(a.id)}
-                      onChange={() => toggleArtifact(a.id)}
-                      style={{ width: '14px', height: '14px' }}
-                    />
-                    📄 {a.name}
-                  </label>
-                ))}
-              </div>
-            ) : (
-              <div style={{ fontSize: '12px', color: '#94a3b8', fontStyle: 'italic' }}>
-                No uploaded artifacts for this project. Upload files to improve draft accuracy.
+                  />
+                </div>
+                <div>
+                  <label style={{ display: 'block', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>End Date</label>
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '6px 10px',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '12px',
+                      boxSizing: 'border-box',
+                    }}
+                  />
+                </div>
               </div>
             )}
           </div>
@@ -368,6 +445,21 @@ export default function AIWorkspacePage() {
                   ✉ Gmail Draft
                 </button>
                 <button
+                  onClick={handleDownloadPDF}
+                  style={{
+                    background: '#ffffff',
+                    border: '1px solid #cbd5e1',
+                    color: '#475569',
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                  }}
+                >
+                  📥 Download PDF
+                </button>
+                <button
                   onClick={handlePublish}
                   style={{
                     background: '#34a853',
@@ -386,25 +478,91 @@ export default function AIWorkspacePage() {
             )}
           </div>
 
+          {/* Tabs for Preview and Code */}
+          {activeReportId && (
+            <div
+              style={{
+                display: 'flex',
+                gap: '8px',
+                marginBottom: '16px',
+                background: '#f1f5f9',
+                padding: '4px',
+                borderRadius: '8px',
+                width: 'fit-content',
+              }}
+            >
+              <button
+                onClick={() => setEditorTab('PREVIEW')}
+                style={{
+                  background: editorTab === 'PREVIEW' ? '#ffffff' : 'transparent',
+                  color: editorTab === 'PREVIEW' ? '#1e3a8a' : '#475569',
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: editorTab === 'PREVIEW' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                }}
+              >
+                👁 Interactive Preview
+              </button>
+              <button
+                onClick={() => setEditorTab('CODE')}
+                style={{
+                  background: editorTab === 'CODE' ? '#ffffff' : 'transparent',
+                  color: editorTab === 'CODE' ? '#1e3a8a' : '#475569',
+                  border: 'none',
+                  padding: '6px 16px',
+                  borderRadius: '6px',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  boxShadow: editorTab === 'CODE' ? '0 1px 2px rgba(0,0,0,0.05)' : 'none',
+                }}
+              >
+                💻 Edit HTML Code
+              </button>
+            </div>
+          )}
+
           {/* Markdown Text Area */}
           {activeReportId ? (
-            <textarea
-              style={{
-                flex: 1,
-                width: '100%',
-                minHeight: '350px',
-                border: 'none',
-                outline: 'none',
-                fontFamily: 'Courier New, monospace',
-                fontSize: '14px',
-                lineHeight: '1.6',
-                color: '#334155',
-                resize: 'vertical',
-                boxSizing: 'border-box',
-              }}
-              value={editorText}
-              onChange={(e) => setEditorText(e.target.value)}
-            />
+            editorTab === 'PREVIEW' ? (
+              <iframe
+                srcDoc={`<!DOCTYPE html><html><head><style>body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; margin: 0; padding: 20px; background-color: #f8fafc; color: #1e293b; }</style></head><body>${editorText}</body></html>`}
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  minHeight: '400px',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '8px',
+                  background: '#ffffff',
+                  boxSizing: 'border-box',
+                }}
+                title="Report Preview"
+              />
+            ) : (
+              <textarea
+                style={{
+                  flex: 1,
+                  width: '100%',
+                  minHeight: '400px',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '8px',
+                  padding: '12px',
+                  outline: 'none',
+                  fontFamily: 'Courier New, monospace',
+                  fontSize: '13px',
+                  lineHeight: '1.5',
+                  color: '#334155',
+                  resize: 'vertical',
+                  boxSizing: 'border-box',
+                }}
+                value={editorText}
+                onChange={(e) => setEditorText(e.target.value)}
+              />
+            )
           ) : (
             <div
               style={{

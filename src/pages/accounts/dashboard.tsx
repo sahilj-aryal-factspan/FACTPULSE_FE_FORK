@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useDataStore } from '../../store/data-store';
 
 export default function AccountDashboardPage() {
   const { accountId } = useParams<{ accountId: string }>();
   const { accounts, projects, buyingCenters, stakeholders } = useDataStore();
+  const [ragFilter, setRagFilter] = useState<'ALL' | 'GREEN' | 'AMBER' | 'RED'>('ALL');
 
   const account = (accounts || []).find((a) => a.id === accountId);
   if (!account) {
@@ -23,6 +25,16 @@ export default function AccountDashboardPage() {
 
   const centerIds = accountCenters.map((bc) => bc.id);
   const accountStakeholders = (stakeholders || []).filter((s) => centerIds.includes(s.buyingCenterId));
+
+  const greenCount = accountProjects.filter((p) => p.health === 'GREEN').length;
+  const amberCount = accountProjects.filter((p) => p.health === 'AMBER').length;
+  const redCount = accountProjects.filter((p) => p.health === 'RED').length;
+  const totalCount = accountProjects.length;
+
+  const filteredProjects = accountProjects.filter((p) => {
+    if (ragFilter === 'ALL') return true;
+    return p.health === ragFilter;
+  });
 
   const getRagBadgeStyle = (status: 'GREEN' | 'AMBER' | 'RED') => {
     switch (status) {
@@ -239,66 +251,269 @@ export default function AccountDashboardPage() {
             </Link>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {accountProjects.map((p) => (
-              <div
-                key={p.id}
-                style={{
-                  border: '1px solid #e2e8f0',
-                  borderRadius: '8px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  transition: 'background-color 0.2s',
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.backgroundColor = '#f8fafc')}
-                onMouseOut={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-              >
-                <div>
-                  <div style={{ fontWeight: 600, color: '#1e3a8a', fontSize: '15px' }}>
-                    {p.name}
-                  </div>
-                  <div
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px' }}
-                  >
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Status: {p.status}</span>
-                    <span
-                      style={{
-                        width: '4px',
-                        height: '4px',
-                        borderRadius: '50%',
-                        background: '#64748b',
-                      }}
-                    />
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>Health: {p.health}</span>
-                  </div>
+          {/* Segmented RAG Heatmap Summary Bar */}
+          {totalCount > 0 && (
+            <div
+              style={{
+                display: 'flex',
+                height: '32px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                marginBottom: '20px',
+                border: '1px solid #cbd5e1',
+                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.05)',
+              }}
+            >
+              {greenCount > 0 && (
+                <div
+                  onClick={() => setRagFilter(ragFilter === 'GREEN' ? 'ALL' : 'GREEN')}
+                  style={{
+                    width: `${(greenCount / totalCount) * 100}%`,
+                    backgroundColor: '#10b981',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                    opacity: ragFilter === 'GREEN' || ragFilter === 'ALL' ? 1 : 0.4,
+                  }}
+                  title={`Filter Green Projects (${greenCount})`}
+                >
+                  🟢 {greenCount} Green
                 </div>
+              )}
+              {amberCount > 0 && (
+                <div
+                  onClick={() => setRagFilter(ragFilter === 'AMBER' ? 'ALL' : 'AMBER')}
+                  style={{
+                    width: `${(amberCount / totalCount) * 100}%`,
+                    backgroundColor: '#f59e0b',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                    opacity: ragFilter === 'AMBER' || ragFilter === 'ALL' ? 1 : 0.4,
+                  }}
+                  title={`Filter Amber Projects (${amberCount})`}
+                >
+                  🟡 {amberCount} Amber
+                </div>
+              )}
+              {redCount > 0 && (
+                <div
+                  onClick={() => setRagFilter(ragFilter === 'RED' ? 'ALL' : 'RED')}
+                  style={{
+                    width: `${(redCount / totalCount) * 100}%`,
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    transition: 'opacity 0.2s',
+                    opacity: ragFilter === 'RED' || ragFilter === 'ALL' ? 1 : 0.4,
+                  }}
+                  title={`Filter Red Projects (${redCount})`}
+                >
+                  🔴 {redCount} Red
+                </div>
+              )}
+            </div>
+          )}
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Staffing Health</div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#1e293b' }}>
-                      {p.staffingHealth ?? 0}%
+          {/* Active Filter Indicator / Clear Button */}
+          {ragFilter !== 'ALL' && (
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                background: '#f8fafc',
+                padding: '8px 12px',
+                borderRadius: '6px',
+                marginBottom: '16px',
+                border: '1px solid #e2e8f0',
+              }}
+            >
+              <span style={{ fontSize: '12px', color: '#475569', fontWeight: 500 }}>
+                Showing only{' '}
+                <span
+                  style={{
+                    color:
+                      ragFilter === 'GREEN'
+                        ? '#10b981'
+                        : ragFilter === 'AMBER'
+                        ? '#f59e0b'
+                        : '#ef4444',
+                    fontWeight: 700,
+                  }}
+                >
+                  {ragFilter}
+                </span>{' '}
+                projects ({filteredProjects.length})
+              </span>
+              <button
+                onClick={() => setRagFilter('ALL')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#1e3a8a',
+                  fontWeight: 600,
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                }}
+              >
+                Clear Filter
+              </button>
+            </div>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {filteredProjects.map((p) => {
+              const borderColors = {
+                GREEN: '#10b981',
+                AMBER: '#f59e0b',
+                RED: '#ef4444',
+              };
+              const bgGlows = {
+                GREEN: 'rgba(16, 185, 129, 0.01)',
+                AMBER: 'rgba(245, 158, 11, 0.01)',
+                RED: 'rgba(239, 68, 68, 0.01)',
+              };
+              const staffingColors = (ratio: number) => {
+                if (ratio >= 80) return '#10b981';
+                if (ratio >= 50) return '#f59e0b';
+                return '#ef4444';
+              };
+              const health = p.health || 'GREEN';
+
+              return (
+                <div
+                  key={p.id}
+                  style={{
+                    border: '1px solid #e2e8f0',
+                    borderLeft: `4px solid ${borderColors[health]}`,
+                    borderRadius: '10px',
+                    padding: '18px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.02)',
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = bgGlows[health];
+                    e.currentTarget.style.transform = 'translateY(-1px)';
+                    e.currentTarget.style.boxShadow = '0 4px 6px -1px rgba(0,0,0,0.05)';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.transform = 'none';
+                    e.currentTarget.style.boxShadow = '0 1px 2px rgba(0,0,0,0.02)';
+                  }}
+                >
+                  <div style={{ flex: 1, marginRight: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <Link
+                        to={`/accounts/${account.id}/projects/${p.id}`}
+                        style={{
+                          fontWeight: 700,
+                          color: '#1e3a8a',
+                          fontSize: '15px',
+                          textDecoration: 'none',
+                        }}
+                      >
+                        {p.name}
+                      </Link>
+                      <span
+                        style={{
+                          fontSize: '9px',
+                          fontWeight: 700,
+                          padding: '2px 8px',
+                          borderRadius: '12px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '4px',
+                          ...getRagBadgeStyle(health),
+                        }}
+                      >
+                        <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: borderColors[health] }}></span>
+                        {health}
+                      </span>
+                    </div>
+
+                    {/* Staffing health mini visualizer */}
+                    <div style={{ marginTop: '12px', maxWidth: '300px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', color: '#64748b', marginBottom: '4px' }}>
+                        <span>Staffing Score</span>
+                        <span style={{ fontWeight: 'bold', color: staffingColors(p.staffingHealth ?? 0) }}>
+                          {p.staffingHealth ?? 0}%
+                        </span>
+                      </div>
+                      <div style={{ width: '100%', height: '5px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div
+                          style={{
+                            width: `${p.staffingHealth ?? 0}%`,
+                            height: '100%',
+                            background: staffingColors(p.staffingHealth ?? 0),
+                            borderRadius: '4px',
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Core Check-gates Compliance tags */}
+                    <div style={{ display: 'flex', gap: '12px', marginTop: '12px', fontSize: '11px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: p.wbrCompliance ? '#10b981' : '#cbd5e1' }}>●</span>
+                        <span style={{ color: '#64748b' }}>WBR</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: p.mbrCompliance ? '#10b981' : '#cbd5e1' }}>●</span>
+                        <span style={{ color: '#64748b' }}>MBR</span>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ color: p.qbrCompliance ? '#10b981' : '#cbd5e1' }}>●</span>
+                        <span style={{ color: '#64748b' }}>QBR</span>
+                      </div>
                     </div>
                   </div>
-                  <Link
-                    to={`/accounts/${account.id}/projects/${p.id}`}
-                    style={{
-                      textDecoration: 'none',
-                      background: '#f1f5f9',
-                      color: '#1e3a8a',
-                      padding: '6px 12px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                    }}
-                  >
-                    Manage
-                  </Link>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <Link
+                      to={`/accounts/${account.id}/projects/${p.id}`}
+                      style={{
+                        textDecoration: 'none',
+                        background: '#f1f5f9',
+                        color: '#1e3a8a',
+                        padding: '8px 16px',
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        transition: 'all 0.15s ease',
+                      }}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.backgroundColor = '#e2e8f0';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.backgroundColor = '#f1f5f9';
+                      }}
+                    >
+                      Manage →
+                    </Link>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 

@@ -189,18 +189,19 @@ Portfolio
 
 #### Module 3 – Governance Tracking (MVP Core)
 *   **Track:** Daily Standups, Weekly Notes, WBR, FBR, MBR, QBR, Stakeholder 1x1, Security Reviews, NPS Feedback, Employee 1x1.
-*   **Outputs:** Governance Score, Compliance Alerts, Governance Trends.
+*   **Outputs:** Governance Score, Compliance Alerts, Governance Trends, and dynamic **Timeline Date Filtering** (`This Week`, `Previous Week`, `This Month`, or custom calendar boundaries) across project dashboards.
 
 #### Module 4 – AI Governance Assistant
 *   **Generate:** Weekly Notes Draft, WBR Draft, Governance Summary, Account Digest.
-*   **Input Sources:** Google Drive, Uploaded Documents, Weekly Notes, WBR Repository, MOM Repository.
+*   **Input Sources:** Selected based on target timeline periods (presets and custom calendar bounds). Auto-falls back to project database records (matching the timeframe) with friendly warnings if no documents exist for the period.
+*   **UI Features:** Visually styled HTML matching brand templates, previewed inside interactive frame tabs, and downloadable as high-resolution PDF.
 *   *Note: All outputs require human review and approval.*
 
 #### Module 5 – Dashboards
 *   **Portfolio Dashboard:** Account Health, Governance Trends, Compliance Visibility.
-*   **Account Dashboard:** Buying Centers, Governance Health, Stakeholder Health.
+*   **Account Dashboard:** Buying Centers, Governance Health, Stakeholder Health, and **Interactive RAG Heatmap Summary Bar** with click-to-filter capability, plus staffing visual health progress bars.
 *   **Buying Center Dashboard:** Stakeholder Hierarchy, Sentiment, Connect History.
-*   **Project Dashboard:** Governance Compliance, Risks, Actions, Upcoming Reviews.
+*   **Project Dashboard:** RAG Recalculation Engine, 11 Governance Activity matrix tiles with action-guided upload shortcuts, timeline filtering for Risks, Action Items, and Decisions.
 
 ### 6.4 Non-Functional Requirements
 *   **Security:** RBAC at backend. Supported roles: Platform Admin, Executive Leadership, Account Lead, Delivery Lead.
