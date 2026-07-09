@@ -1005,67 +1005,53 @@ export const useDataStore = create<DataStore>((set, get) => ({
 
   syncWithBackend: async () => {
     try {
-      const [accRes, projRes, govRes, artRes, risksRes, actionsRes, decisionsRes, digestRes, trendsRes] = await Promise.all([
-        fetch('http://localhost:8080/api/v1/accounts'),
-        fetch('http://localhost:8080/api/v1/projects'),
-        fetch('http://localhost:8080/api/v1/governance-activities'),
-        fetch('http://localhost:8080/api/v1/artifacts'),
-        fetch('http://localhost:8080/api/v1/risks'),
-        fetch('http://localhost:8080/api/v1/action-items'),
-        fetch('http://localhost:8080/api/v1/decisions'),
-        fetch('http://localhost:8080/api/v1/dashboard/portfolio-summary'),
-        fetch('http://localhost:8080/api/v1/dashboard/governance-trends'),
+      const fetchHelper = async (url: string) => {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            return await res.json();
+          }
+          console.warn(`Backend fetch failed for URL: ${url} (status ${res.status})`);
+          return null;
+        } catch (e) {
+          console.warn(`Backend connection failed for URL: ${url}`, e);
+          return null;
+        }
+      };
+
+      const [
+        dbAccounts,
+        dbProjects,
+        dbGovRecords,
+        dbArtifactsPayload,
+        dbRisksPayload,
+        dbActionsPayload,
+        dbDecisionsPayload,
+        digestPayload,
+        trendsPayload
+      ] = await Promise.all([
+        fetchHelper('http://localhost:8080/api/v1/accounts'),
+        fetchHelper('http://localhost:8080/api/v1/projects'),
+        fetchHelper('http://localhost:8080/api/v1/governance-activities'),
+        fetchHelper('http://localhost:8080/api/v1/artifacts'),
+        fetchHelper('http://localhost:8080/api/v1/risks'),
+        fetchHelper('http://localhost:8080/api/v1/action-items'),
+        fetchHelper('http://localhost:8080/api/v1/decisions'),
+        fetchHelper('http://localhost:8080/api/v1/dashboard/portfolio-summary'),
+        fetchHelper('http://localhost:8080/api/v1/dashboard/governance-trends'),
       ]);
 
-      if (accRes.ok && projRes.ok && govRes.ok && artRes.ok) {
-        const dbAccounts = await accRes.json();
-        const dbProjects = await projRes.json();
-        const dbGovRecords = await govRes.json();
-        const dbArtifactsPayload = await artRes.json();
-        const dbArtifacts = dbArtifactsPayload.data?.items || [];
-
-        let dbRisks = [];
-        if (risksRes.ok) {
-          const payload = await risksRes.json();
-          dbRisks = payload.data || [];
-        }
-
-        let dbActions = [];
-        if (actionsRes.ok) {
-          const payload = await actionsRes.json();
-          dbActions = payload.data || [];
-        }
-
-        let dbDecisions = [];
-        if (decisionsRes.ok) {
-          const payload = await decisionsRes.json();
-          dbDecisions = payload.data || [];
-        }
-
-        let aiExecutiveDigest = 'Overall health is 86%. loading...';
-        if (digestRes.ok) {
-          const payload = await digestRes.json();
-          aiExecutiveDigest = payload.data?.aiExecutiveDigest || aiExecutiveDigest;
-        }
-
-        let trendsData = [];
-        if (trendsRes.ok) {
-          const payload = await trendsRes.json();
-          trendsData = payload.data || [];
-        }
-
-        set(() => ({
-          accounts: dbAccounts,
-          projects: dbProjects,
-          governanceRecords: dbGovRecords,
-          artifacts: dbArtifacts,
-          risks: dbRisks,
-          actions: dbActions,
-          decisions: dbDecisions,
-          aiExecutiveDigest,
-          trendsData,
-        }));
-      }
+      set((state) => ({
+        accounts: dbAccounts || state.accounts,
+        projects: dbProjects || state.projects,
+        governanceRecords: dbGovRecords || state.governanceRecords,
+        artifacts: dbArtifactsPayload?.data?.items || dbArtifactsPayload || state.artifacts,
+        risks: dbRisksPayload?.data || dbRisksPayload || state.risks,
+        actions: dbActionsPayload?.data || dbActionsPayload || state.actions,
+        decisions: dbDecisionsPayload?.data || dbDecisionsPayload || state.decisions,
+        aiExecutiveDigest: digestPayload?.data?.aiExecutiveDigest || digestPayload || state.aiExecutiveDigest,
+        trendsData: trendsPayload?.data || trendsPayload || state.trendsData,
+      }));
     } catch (e) {
       console.error('Failed to sync with backend', e);
     }
